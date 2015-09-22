@@ -6,12 +6,16 @@
 mpEnc progress report
 =====================
 
-Contents:
+TODO: write introduction last.
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
 
-
+   background
+   progress
+   engineering
+   future-work
 
 Indices and tables
 ==================
