@@ -2,10 +2,10 @@
 Multi-Party Encrypted Messaging Protocol
 ========================================
 
-This repository contains a progress report on the `mpEnc` protocol suite, an
-effort towards an end-to-end secure private group messaging protocol, with
-security properties similar to the popular two-party `OTR` protocol, as well
-as some additional features and properties useful for groups.
+This repository contains a design document on the `mpEnc` protocol suite, an
+effort towards an end-to-end secure private group messaging protocol. It has
+security properties similar to the popular two-party `OTR` protocol, as well as
+some additional features and properties useful for groups.
 
 Building
 --------
