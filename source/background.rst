@@ -66,12 +66,15 @@ For completeness, we note that a real system often unintentionally generates
 - size, location of storage
 - time, size, route of communications
 
-and probably more that we've missed. This is sometimes unavoidable, but not
-always. We'll keep this in mind for later.
+and probably more that we've missed. Generation of this information is often
+but not always unavoidable. We'll keep this topic in mind for later.
 
 We've enumerated the types of information that we have - membership, ordering,
 content, and side channel data. Next, we'll discuss how each of the abstract
 properties (from the previous section) apply to each of these types.
+
+We currently don't have a good model of what it precisely means to *rejoin* a
+session; we will probably revisit this topic in the future.
 
 .. [#keyv] for example, "WARNING: the authenticity and privacy of this session
     is dependant on the unknown validity of the binding $key |LeftRightArrow|
@@ -228,8 +231,8 @@ Leak session secrets (of some targets)
   only the subject, or shared across all members, or a combination of both.
 
   Depending on the protocol, this may *include* identity secrets if they must
-  be used to generate outgoing or process incoming messages. Better protocols
-  would *not* need this, so that these may be wiped from memory during the
+  be used to generate/process messages or membership changes. Better protocols
+  would *not* need this, so that these may be wiped from memory during a
   session, reducing the attack surface.
 
 Corrupt member (of some targets)
@@ -244,6 +247,34 @@ Corrupt member (of some targets)
   attacker can observe secret computations that don't touch memory, e.g.
   collecting, using, then immediately discarding entropy.
 
+Now, we'll try to enumerate all the concrete things an attacker *might* be able
+to do, by applying our abstract properties to our model of session mechanics.
+The term "target" refers to the direct target of a secrets-leak or corruption,
+and "current" is relative to when those attacks happen. This is simplified for
+the time being; we don't directly consider multiple attacks.
+
+Older sessions (i.e. already-closed)
+  - read session events (i.e. decrypt/verify messages and membership changes);
+    [#uenc]_ [#fwds]_
+  - (participation is not applicable, since the session is already closed).
+
+Current sessions (i.e. opened, not-yet-closed)
+  - read session events; [#fwds]_
+  - participate as targets (i.e. auth/encrypt messages and initiate/confirm
+    membership changes; this includes making false claims or omissions in the
+    *contents* of messages, such as receipt acknowledgements, which may break
+    other properties like auth. of ordering, auth. of message membership, or
+    invariants on the application layer);
+  - participate as non-targets (e.g. against the targets); [#kcis]_
+  - (these may apply differently to newer or older parts of the session).
+
+Newer sessions (i.e. not-yet-opened)
+  - open/join sessions as targets, read their events and participate in them;
+  - open/join sessions (etc.) as non-targets (e.g. invite a target or intercept
+    or respond to their invitations), read and participate in them; [#kcis]_
+  - read session events, participate as targets, or as non-targets, in sessions
+    whose establishment was not compromised (as in previous points). [#rene]_
+
 Next, we'll discuss the unavoidable consequences of attacks using these powers,
 and from this try to get an intuitive idea on the best thing we *might* be able
 to defend against:
@@ -255,65 +286,64 @@ Active attack
   message contents, or the auth. of membership - and therefore also anything
   that derives their security from these mechanisms.
 
-  However, side channel attacks against the conf. of membership is still
-  feasible; hiding this sufficiently well (and even defining models for all of
-  the side channels) is still a research problem, and it is not known what the
-  maximum possible protection is.
+  However, side channel attacks against the conf. of membership are feasible;
+  hiding this sufficiently well (and even defining models for all of the side
+  channels) is still a research problem, and it is not known what the maximum
+  possible protection is.
 
 Leak identity secrets (+ active):
-  By definition, the attacker may initiate sessions or confirm invitation *as
-  the target*. However, perhaps we might be able to defend against the attacker
-  trying to:
-
-  - start new sessions or confirm invitations *as others* (e.g. inviting the
-    target or intercepting the target's invitations);
-  - decrypt/verify messages from older sessions;
-  - participate in current sessions, or newer sessions that are established
-    without the attacker's interference.
+  By definition, the attacker may open/join sessions *as targets*, then read
+  their events and participate in them. However, we may be able to prevent them
+  from doing anything else.
 
 Leak session secrets (+ active):
-  By definition, the attacker may participate *as the target* in current
-  sessions - for at least several messages, until the members mix in entropy
-  secret to the attacker. This means that they may:
-
-  - authenticate/encrypt messages or write membership changes, as the target;
-  - decrypt/verify messages or read membership changes, sent to the session;
-    [#uenc]_
-  - make false claims or omissions in the *contents* of messages, which may
-    break other concerns like auth. of ordering, or application invariants.
-
-  However, perhaps we might be able to defend against the attacker trying to:
-
-  - exercise those capabilities in the current session *as others*;
-  - exercise those capabilities in older sessions;
-  - (if session secrets don't include identity secrets) initiate or confirm
-    invitation to, or exercise those capabilities in, newer sessions.
+  By definition, the attacker may participate *as targets* in current sessions,
+  and read its events, for at least several messages into the future - until
+  members mix in new entropy secret to the attacker. If session secrets also
+  include identity secrets, the attacker also gains the abilities mentioned in
+  the previous point. However, we may be able to prevent them from doing
+  anything else.
 
 Corrupt insider (+active):
   This is similar to the above, except that there is no chance of recovery by
   members mixing in entropy, until after the corruption is healed.
 
-So under certain attacks we can't protect confidentiality, even for actions of
-members that aren't compromised. Such is the nature of our group session model.
-But we *could* try to protect a related property:
+We've seen that under certain attacks we can't protect confidentiality, even
+for actions generated by non-target members. Such is the nature of our group
+session model. But we *could* try to protect a related property:
 
 **Confidential authenticity**
   Only the intended consumers should be able to verify the information. (Of
   course, attackers who break confidentiality, may choose to believe the
   information even without being able to verify it.)
 
-As noted earlier, this is useful not merely for its own sake, but is essential
-if we want to protect the confidentiality of membership. Against an active
-attacker, this means that verification must be executable only by other members
-of the session, i.e. depend on session secrets. Against a corrupt insider, who
-is already allowed to verify content authorship, this means we must choose a
-deniable or zero-knowledge authentication mechanism, so that they are at least
-unable to pass this certainty-in-belief onto third parties.
+For every type of information where we want authenticity *and* confidentiality,
+we should also aim for confidential authenticity - if the attacker should be
+unable to read its contents, they should also be unable to verify *anything*
+about it. As noted earlier, this is useful not merely for its own sake, but is
+essential if we want to protect the confidentiality of membership.
+
+Against an active attacker, this means that verification must be executable
+only by other members, i.e. depend on session secrets. Against a corrupt
+insider, who is already allowed to perform verification, this means we must
+choose a deniable or zero-knowledge authentication mechanism, so that they are
+at least unable to pass this certainty-in-belief onto third parties.
 
 .. [#uenc] It may be theoretically possible to restrict this only to messages
-    sent *by others* (i.e. excluding messages that the *target* sends), and
+    authored *by non-targets* (excluding messages that the *target* sends), and
     likewise for membership changes. However, it's unlikely that the complexity
     of any solution is worth the benefit, since (a) for every member, we'd need
     to arrange that they can't derive the ability to decrypt their own messages
     from their session secrets, and (b) even with this protection, the attacker
     can still just compromise a second member to get the missing pieces.
+
+.. [#fwds] The inability for an attacker to decrypt past messages is commonly
+    known as (various types of, depending on the attack) "forward secrecy".
+
+.. [#kcis] This attack is commonly known as "key compromise impersonation".
+
+.. [#rene] For example, the protocol may offer the ability for members to check
+    out-of-band, after establishment, that shared session secrets match up as
+    expected, and if so be convinced that the session has full security (i.e.
+    distinguish it from the first point), independently of whether identity
+    secrets were compromised before.
