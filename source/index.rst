@@ -8,7 +8,7 @@ TODO: write introduction last.
    :numbered:
 
    background
-   progress
+   design
    engineering
    future-work
 
