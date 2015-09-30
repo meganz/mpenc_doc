@@ -11,6 +11,7 @@ TODO: write introduction last.
    design
    engineering
    future-work
+   greeting
 
 Indices and tables
 ==================
