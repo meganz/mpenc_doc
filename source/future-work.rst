@@ -13,8 +13,12 @@ Immediate
 
 - Get signature-key publishing logic working properly for deniable auth.
 - Consistency checks for server-order
+
 - Better group key exchange
-- Better flow control
+- Better flow control (resends)
+
+- TODO: Multi-device support... what issues here?
+- UI integration [TODO: refer to previous chapter, corresponding section]
 
 Long term
 =========
@@ -32,3 +36,9 @@ Functionality
 - Shared chat history
 - Move non-GKA messages into p2p/anon channel
 - Asynchronous messaging
+
+Comparison
+==========
+
+- Well-defined behaviour in case of concurrency
+- free software

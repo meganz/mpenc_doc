@@ -76,6 +76,8 @@ properties (from the previous section) apply to each of these types.
 We currently don't have a good model of what it precisely means to *rejoin* a
 session; we will probably revisit this topic in the future.
 
+TODO: rw above a little bit
+
 .. [#keyv] for example, "WARNING: the authenticity and privacy of this session
     is dependant on the unknown validity of the binding $key |LeftRightArrow|
     $user" or perhaps something less technical.

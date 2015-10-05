@@ -1,145 +1,15 @@
-======
-Design
-======
-
-Security
+========
+Protocol
 ========
 
-We do not try to provide confidentiality of session existence, membership, or
-metadata, under any attack scenario. However, we try to avoid incompatiblities
-with any future other systems that do provide these properties, based on our
-knowledge of existing research and systems that approximate these.
+TODO: brief intro
 
-We aim to directly provide confidentiality of message content and authenticity
-of membership, ordering, and content; and later a limited form of confidential
-authenticity of ordering and content. An overview follows; we will expand on it
-in more detail in subsequent sections.
-
-We achieve authenticity and confidentiality of message content with standard
-modern cryptographic primitives using ephemeral session keys. The security of
-these keys, and the authenticity of session membership and boundary ordering
-(freshness), are achieved through a group key agreement and authentication
-protocol. At present we use our own protocol, but this could be replaced.
-
-The authenticity of message ordering is achieved through the authenticity of
-message content, together with some rules that enforce logical consistency.
-That is, someone who can authenticate message contents (either an attacker via
-secrets leak or a corrupt insider) must still adhere to those rules.
-
-The authenticity of message membership (reliability, consistency) is achieved
-through the authenticity of message ordering, together with some rules that
-enforce liveness, using timeout warnings and continual retries. This *differs*
-from previous approaches (TODO: give examples) which try to achieve these
-properties through the session establishment protocol; we believe that they are
-more appropriately dealt with here, as will be justified later.
-
-Additionally, our choice of mechanisms are intended to offer different levels
-of protection for these properties, under various attack scenarios:
-
-Under active communications attack:
-  Retain all security properties mentioned above, for all members.
-
-Under identity secrets leak against some targets (and active attack):
-  Older sessions:
-    - Retain all relevant security properties.
-
-  Current sessions:
-    - Retain all relevant security properties until the next membership change;
-    - [+] From the next change onwards, properties are as per *newer sessions*,
-      since in our system this requires identity secrets as well.
-
-  Newer sessions:
-    - [x] Attacker can open/join sessions as targets, read and participate;
-    - Attacker *cannot* open/join sessions as non-targets, read or participate;
-    - Retain all relevant security properties, for sessions whose establishment
-      was not actively compromised.
-
-Under session secrets leak against some targets (and active attack):
-  Older sessions:
-    - Retain all relevant security properties.
-
-  Current sessions:
-    - [+; partly x] Attacker can read session events;
-    - [+; partly x] Attacker can participate as targets;
-    - Attacker *cannot* participate as non-targets.
-
-  Newer sessions:
-    - [+] as per *identity secrets leak: new sessions*; our session secrets
-      unfortunately include identity secrets.
-
-Under insider corruption (and under active attack):
-  As per *session secrets leak*; but entries marked imperfect cannot be
-  improved upon. More specifically, the properties we *do* retain are:
-
-  - Some limited protection against false claims/omissions about ordering;
-  - (upcoming work) Retain confidential authenticity of ordering and content.
-
-  Note that these apply to all lesser attacks too; we mention them explicitly
-  here so that this section is less depressing.
-
-| [x] unavoidable, as explained in the previous chapter.
-| [+] imperfect, theoretically improvable, but we have no immediate plans to.
-
-Distributed systems
-===================
-
-Security properties are meant to detect *incorrect behaviour*; but conflicts in
-naively-implemented distributed systems can happen *even when* everyone behaves
-correctly. If we don't explicitly identify and resolve these situations as *not
-a security problem*, but instead allow our security mechanisms to warn or fail
-in their presence, we reduce the usefulness of the latter. In other words, a
-warning which is 95% likely to be a false positive, is useless information and
-a very bad user experience that may push them towards less secure applications.
-
-Generally in a distributed system, events may happen concurrently, so ideally a
-partial order (directed acyclic graph) rather than a total order (line) should
-be used to represent the ordering of events. We do this for messages, so this
-component of our system may be re-used in asynchronous systems, without major
-redesign.
-
-However, group key agreements (which is how we implement membership changes)
-have traditionally not been developed with this consideration in mind. The main
-problem that needs to be solved here, would be to define a method to merge the
-results of two concurrent operations, or even the operations themselves. We
-have not tried to do this, as it seems complicated and highly dependent on the
-GKA used. Instead, we have developed a system to enforce and verify that these
-operations happen in a consistent total order, that has zero bandwidth cost and
-generalises to *any* GKA (that satisfies certain constraints).
-
-Beyond this, there are several more non-security distributed systems issues,
-that relate to the integration of cryptographic logic in the context of a group
-transport channel (commonly implemented by insecure group messaging systems),
-that we must figure out graceful low-failure-rate solutions for:
-
-- When a user enters the channel during a GKA, what should they do?
-- When a user leaves the channel during a GKA, what do others do?
-- A member might start a GKA and send the first packet to the other channel
-  members M, but when others receive it perhaps the channel membership is now
-  different from M, or there was another operation that jumped in "before" it.
-  How should we detect and resolve this?
-- What happens if different GKA packets (initial or final), are decodeable by
-  different members? Some of them may not yet be part of the cryptographic
-  session. If we're not careful, they will think different things about the
-  state of the session, or of others' sessions.
-- What if some of the above things happen at the same time?
-
-Individual solutions to each of these are fairly straightforward, but making
-sure that these interact with each other in a sane way is not so. Then, there
-is the task of describing the intended behaviour *precisely*. Only when we have
-a precise idea on what is *supposed* to happen, can we construct a concrete
-system that isn't fragile, i.e. require mountains of patches for corner cases
-ignored during the initial hasty naive implementations.
-
-- TODO: Multi-device support... what issues here?
-
-.. _design-and-mechanism:
-
-Design and mechanism
-====================
+Session overview
+================
 
 A session is a local process from the point of view of *one member*. We don't
-attempt to represent a single "global" or "group" view of a session; in general
-such a concept is not useful for modelling security *or* distributed systems.
+attempt to represent a single "group" view of a session; in general such views
+are not good for *accurately* modelling security *or* distributed systems.
 
 A session, time-wise, contains a linear sequence of *session membership change*
 operations, that each take some interval of time to finish (and if/when having
@@ -163,58 +33,7 @@ enters a shutdown phase. This happens concurrently and independently of other
 parts of the session, such as messaging in the new subsession or subsequent
 membership change operations on top of G.
 
-The local process that runs a session consists of several internal components:
-
-- a client interface to the group transport channel; this is the only interface
-  the process has with the network;
-- a component that manages membership operations as described above, storing
-  state between operations and creating/destroying subprocesses to run them;
-- two components for the current and previous subsession that process, store,
-  and generate message packets;
-- a concurrency resolver, to gracefully prevent conflicts caused by members
-  trying to perform membership changes concurrently.
-
-The process handles internally the various cases mentioned above relating to
-transport integration, helped by the concurrency resolver. It also manages the
-membership changes that are initiated by the local user, which require a bit
-more hand-holding, such as retries in the case of transport hiccups, etc.
-
-Each subsession component consists of:
-
-- a message encryptor/decryptor for communicating to/from the session;
-- a transcript data structure to hold accepted messages in the correct order;
-- various liveness components to ensure end-to-end reliability and consistency.
-
-The session receive handler roughly runs as follows. For each incoming packet:
-
-1. if it represents a channel membership change, then react to it (i.e. as part
-   of transport integration), which we'll go into in more detail later;
-2. else, if it is a membership operation packet:
-
-   - if it is relevant to the concurrency resolver, pass it to that, which may
-     cause an operation to start or finish (with success or failure);
-   - if an operation is ongoing, pass it to the subprocess running that;
-   - else reject the packet - it's not appropriate at this time.
-
-3. else, try to verify-decrypt it as a message in the current subsession;
-
-   - if the packet verifies but fails to be accepted into the transcript due
-     to missing parents, put it in a try-accept queue *in this subsession*, to
-     try this process again later (and similarly for the next case);
-
-4. else, try to verify-decrypt it as a message in the previous subsession;
-5. else, put it on a queue, to try this process again later, in case it was
-   received out-of-order and depends on missing packets to decrypt.
-
-Out of these, the components that deal directly with cryptography are:
-
-- the membership operations manager, that implements the group key agreement;
-- the message encryptor/decryptor, that could implement a messaging ratchet.
-
-These may be improved independently from the rest of the session components.
-Furthermore, within each component, we may swap out cryptographic primitives -
-i.e. DH key exchange schemes, signature schemes, hash functions and symmetric
-ciphers - as necessary, based on the recommendations of the wider community.
+TODO: something about rejecting/accepting proposals
 
 .. [#atom] Our first group key agreement implementation did not enforce atomic
     operations. This caused major problems when users would leave the channel
@@ -226,7 +45,7 @@ ciphers - as necessary, based on the recommendations of the wider community.
     actually a problem*, one of our goals.
 
 Group key agreement
--------------------
+===================
 
 Our group key agreement is composed of the following two subprotocols:
 
@@ -254,7 +73,7 @@ modern techniques make the key agreement itself deniable (via a zero knowledge
 proof) but we're not expert enough in cryptography to do that here.
 
 Transport integration
----------------------
+=====================
 
 On top of the main membership change protocol, we have the initial packet of
 each operation reference the final packet of the previous successful operation
@@ -286,7 +105,7 @@ precise descriptions of the model for a general G, and of the group transport
 channel, see [TODO: link].
 
 Message ordering
-----------------
+================
 
 Every message has an explicit set of references to the latest other messages
 ("parents") seen by the author when they wrote the message. These references
@@ -320,7 +139,7 @@ approach to strong ordering, and ways to calculate references to have better
 resistance against false claims, see [TODO: link].
 
 Reliability and consistency
----------------------------
+===========================
 
 Due to our strong ordering property, we can interpret parent references as an
 implicit acknowledgement ("ack") that the author received every parent. Based
@@ -346,7 +165,7 @@ different ack semantics, why we must have end-to-end authenticated reliability,
 and the distinction between consistency and consensus, see [TODO: link].
 
 Message encryption
-------------------
+==================
 
 Message encryption is currently very simple. Each subsession has a constant set
 of keys (the output of the group key exchange) that are used to authenticate

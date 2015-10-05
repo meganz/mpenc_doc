@@ -13,8 +13,8 @@ untested by existing protocols. Our hope is that a high-level description of an
 *implementation* will help reduce this over-estimation of the complexity.
 Another hope is that it will make audits and code reviews easier and faster.
 
-Architecture
-============
+Public interface
+================
 
 We begin by observing that any implementation of any communications system must
 (a) do IO with the network; and (b) do IO with the user. In our system, we
@@ -35,7 +35,8 @@ GroupChannel (interface) [$]
   method to attempt to send a packet or change the channel membership; (b) one
   output pipe to receive channel events; and (c) various query methods. Actions
   may be ignored by the transport or satisfied exactly once, possibly after we
-  receive further channel events not by us.
+  receive further channel events not by us. The transport is supposed to send
+  events to all members in the same order, but members must verify this.
 
 | [$] This component is specific to instant or synchronous messaging; ones
   *not* marked with this may be re-used in an asynchronous messaging system.
@@ -60,13 +61,66 @@ different from insecure transport protocols, and we see this already by the
 difference between session and channel membership. Hopefully whoever does this
 work will architect their future software with greater foresight.
 
-We continue with our description of the internal implementation, but knowledge
-beyond this point is not necessary merely to *use* our system.
+The remainder of this document contains a description of our implementation;
+but knowledge beyond this point is not necessary merely to *use* our system.
 
-HybridSession [$]
-  This is a Session implementation that uses GroupChannel to interact with the
-  network. We described its design :ref:`previously <design-and-mechanism>`;
-  for more technical details, see our API documentation. [TODO: link].
+Session architecture
+====================
+
+HybridSession [$] is our main (and currently only) Session implementation. It
+contains several internal components:
+
+- a GroupChannel, a transport client for communication with the network;
+- a concurrency resolver, to gracefully prevent membership change conflicts;
+- a component [*] that manages and runs membership operations and proposals;
+- two components for the current and previous subsession; each contains:
+
+  - a message encryptor/decryptor [*] for communicating with the session;
+  - a transcript data structure to hold accepted messages in the correct order;
+  - various liveness components to ensure reliability and consistency.
+
+HybridSession itself handles the various transport integration cases; creates
+and destroys subprocesses to run membership operations; and manages membership
+changes that are initiated by the local user, that require more tracking such
+as retries in the case of transport hiccups, etc.
+
+The receive handler roughly runs as follows. For each incoming channel event:
+
+1. if it is a channel membership change, then react to as part of transport
+   integration [TODO: link];
+2. else, if it is a membership operation packet:
+
+   - if it is relevant to the concurrency resolver, pass it to that, which may
+     cause an operation to start or finish (with success or failure);
+   - if an operation is ongoing, pass it to the subprocess running that;
+   - else reject the packet - it's not appropriate at this time.
+
+3. else, try to verify-decrypt it as a message in the current subsession;
+
+   - if the packet verifies but fails to be accepted into the transcript due
+     to missing parents, put it in a try-accept queue *in this subsession*, to
+     try this process again later (and similarly for the next case);
+
+4. else, try to verify-decrypt it as a message in the previous subsession;
+5. else, put it on a queue, to try this process again later, in case it was
+   received out-of-order and depends on missing packets to decrypt.
+
+The components that deal directly with cryptography are marked [*] above. These
+may be improved independently from the others, and from HybridSession. We may
+also replace the cryptographic primitives within each component - e.g. DH key
+exchange, signature schemes, hash functions and symmetric ciphers - as
+necessary, based on the recommendations of the wider community.
+
+For more technical details, see our API documentation. [TODO: link].
+
+Internal components
+===================
+
+ServerOrder [$]
+  The concurrency resolver, used by HybridSession to enforce a consistent and
+  context preserving total-ordering of membership operations. It tracks the
+  results of older operations, whether we're currently in an operation, and
+  decides how to accept/reject proposals for newer operations.
 
 Greeter, Greeting (interface) [$]
   Greeting is a component representing a multi-packet operation, defined as an
@@ -77,18 +131,11 @@ Greeter, Greeting (interface) [$]
   Typically, this may be implemented as a state machine.
 
   Greeter is a factory component for new Greeting instances, defined as an
-  interface used by HybridSession, consisting of some limited codec methods for
-  initial/final packets of a group key agreement. Implementations of these
+  interface used by HybridSession that consists of some limited codec methods
+  for initial/final packets of a group key agreement. Implementations of these
   methods may reasonably depend on state, such as the result of any previous
   operation, data about operations proposed by the local user but not yet
   accepted by the group, or a reference to an ongoing Greeting.
-
-ServerOrder [$]
-  Called "concurrency resolver" in previous chapters, this component is used by
-  HybridSession to enforce a consistent and context preserving total-ordering
-  of membership operations. It tracks the results of older operations, whether
-  we're currently in an operation, and decides how to accept/reject proposals
-  for newer operations.
 
 SessionBase
   This is a partial Session implementation, for full implementations to build
@@ -157,7 +204,7 @@ Utilities
 =========
 
 Our protocol system is built from components that act as independent processes,
-that react to inputs and generate outputs, similar to the actor model. We build
+that react to inputs and generate outputs similar to the actor model. We build
 up a relatively simple framework for this intra-process IO, based on some
 low-level utilities. We'll talk about these first.
 
@@ -311,10 +358,3 @@ is not mentioned here, are straightforward applications of software engineering
 principles or algorithm writing, as applied to our protocol design (previous
 chapter) and software design (this chapter). For more details, see the API
 documentation and/or source code.
-
-UI considerations
-=================
-
-Reference msg-notes
-
-Link to corner cases. (maybe move to "Background" chapter)

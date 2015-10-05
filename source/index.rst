@@ -8,7 +8,8 @@ TODO: write introduction last.
    :numbered:
 
    background
-   design
+   topics
+   protocol
    engineering
    future-work
    greeting
