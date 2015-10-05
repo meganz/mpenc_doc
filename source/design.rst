@@ -132,6 +132,8 @@ ignored during the initial hasty naive implementations.
 
 - TODO: Multi-device support... what issues here?
 
+.. _design-and-mechanism:
+
 Design and mechanism
 ====================
 
@@ -194,8 +196,13 @@ The session receive handler roughly runs as follows. For each incoming packet:
    - if an operation is ongoing, pass it to the subprocess running that;
    - else reject the packet - it's not appropriate at this time.
 
-3. else, try to decrypt it as a message in the current subsession;
-4. else, try to decrypt it as a message in the previous subsession;
+3. else, try to verify-decrypt it as a message in the current subsession;
+
+   - if the packet verifies but fails to be accepted into the transcript due
+     to missing parents, put it in a try-accept queue *in this subsession*, to
+     try this process again later (and similarly for the next case);
+
+4. else, try to verify-decrypt it as a message in the previous subsession;
 5. else, put it on a queue, to try this process again later, in case it was
    received out-of-order and depends on missing packets to decrypt.
 
