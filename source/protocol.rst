@@ -2,7 +2,9 @@
 Protocol
 ========
 
-TODO: brief intro
+Here we present an overview of our protocol, suggested runtime data structures
+and algorithms, with references to other external documents for more specific
+information about each subtopic.
 
 Session overview
 ================
@@ -12,15 +14,19 @@ attempt to represent a single "group" view of a session; in general such views
 are not good for *accurately* modelling security *or* distributed systems.
 
 A session, time-wise, contains a linear sequence of *session membership change*
-operations, that each take some interval of time to finish (and if/when having
-done so sucessfully) each create subsessions of static membership where members
-may send messages to each other perhaps even concurrently in a partial order.
+operations, that (if and when completed successfully) each create subsessions
+of static membership, where members may send messages to each other.
 
-Each operation G is initialised from (a) previous state (either a null state,
-or the result of the previous operation) that encodes the current membership M'
-and any cryptographic values that G needs such as ephemeral keys; and (b) the
-first packet of the operation, sent by a member of M', which defines the
-intended next membership M. When G is still ongoing, members may send messages
+Linearity is enforced through an acceptance mechanism, which is applied to the
+packets where members try to start or finish an operation. The sequence is also
+context-preserving, i.e. it is guaranteed that no other operations complete
+*between* when a member proposes one, and it being accepted by the group.
+
+Each accepted operation G is initialised from (a) previous state (the result of
+the previous operation, or a null state if the first) that encodes the current
+membership M' and any cryptographic values that G needs such as ephemeral keys;
+and (b) the first packet of the operation, sent by a member of M', that defines
+the intended next membership M. While G is ongoing, members may send messages
 in the current subsession as normal, i.e. to M'. [#atom]_
 
 G may finish with success, upon which we atomically change to a new subsession
@@ -32,8 +38,6 @@ After a successful change, the now-previous subsession (with membership M')
 enters a shutdown phase. This happens concurrently and independently of other
 parts of the session, such as messaging in the new subsession or subsequent
 membership change operations on top of G.
-
-TODO: something about rejecting/accepting proposals
 
 .. [#atom] Our first group key agreement implementation did not enforce atomic
     operations. This caused major problems when users would leave the channel
@@ -75,16 +79,23 @@ proof) but we're not expert enough in cryptography to do that here.
 Transport integration
 =====================
 
-On top of the main membership change protocol, we have the initial packet of
-each operation reference the final packet of the previous successful operation
-(or null for the first one). The concurrency resolver then simply accepts the
-earliest packet in the channel with a given parent reference, and rejects other
-such packets. There are also more issues such as what to do when new members
-enter the channel, since they might have missed previous such packets.
+We have the initial packet of each operation, reference the final packet of the
+previous finished operation (or null if the first). Likewise, the final packet
+of each operation references (perhaps implicitly, if this is secure) a specific
+initial packet. The concurrency resolver simply accepts the earliest packet in
+the channel with a given parent reference, and rejects other such packets.
 
-To solve the other distributed systems issues raised earlier, we have a system
-of rules on how to react to different channel and session events. These work
-roughly along these lines:
+There are some more issues, both in the algorithm (e.g. for new members that
+don't know "the previous operation", and to authenticate the parent references)
+as well as in the implementation (e.g. for 1-packet operations that are both
+"final" and "initial); more details are covered in [TODO: link].
+
+The advantage of this mechanism is that it has zero bandwidth cost, and
+generalises to *any* membership change protocol.
+
+To cover the other :ref:`distributed-systems` issues, we also have a system of
+rules on how to react to various channel and session events. These work roughly
+along these principles:
 
 - Every operation's target members (i.e. new members and remaining members)
   must all be in the channel to see the first packet (otherwise it is ignored)
@@ -106,6 +117,10 @@ channel, see [TODO: link].
 
 Message ordering
 ================
+
+As discussed :ref:`previously <distributed-systems>` and elsewhere [TODO: link]
+messages may be sent concurrently even in a group transport channel, and
+therefore we represent the transcript of messages as a causal order.
 
 Every message has an explicit set of references to the latest other messages
 ("parents") seen by the author when they wrote the message. These references

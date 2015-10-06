@@ -118,7 +118,7 @@ Internal components
 
 ServerOrder [$]
   The concurrency resolver, used by HybridSession to enforce a consistent and
-  context preserving total-ordering of membership operations. It tracks the
+  context-preserving total ordering of membership operations. It tracks the
   results of older operations, whether we're currently in an operation, and
   decides how to accept/reject proposals for newer operations.
 
@@ -164,9 +164,9 @@ MessageSecurity (interface)
   of those keys as they age further.
 
 Transcript, MessageLog
-  These are append-only data structures that hold messages in partial order.
+  These are append-only data structures that hold messages in causal order.
 
-  Transcript is a data structure that holds a causal-ordering of all messages,
+  Transcript is a data structure that holds a causal ordering of all messages,
   including non-content messages used for flow control, and other non-user
   concerns. It provides basic query methods, and graph traversal and recursive
   merge algorithms. (The latter is only for aiding future research topics.)

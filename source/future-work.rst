@@ -12,13 +12,12 @@ Immediate
     from that author
 
 - Get signature-key publishing logic working properly for deniable auth.
-- Consistency checks for server-order
+- Consistency checks for server-order. Reference authentication inside the GKA.
 
 - Better group key exchange
 - Better flow control (resends)
 
 - TODO: Multi-device support... what issues here?
-- UI integration [TODO: refer to previous chapter, corresponding section]
 
 Long term
 =========

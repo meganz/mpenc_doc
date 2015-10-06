@@ -5,11 +5,11 @@
 Background
 ==========
 
-This chapter is not about our progress, but a general discussion of secure
-group communications - our model of what it is, and "ideal" properties that
-*might* be achieved. Often, lists of security properties may seem arbitrary,
-with long names seemingly unrelated to each other. We take a more methodical
-approach, and try to classify these properties within a general framework.
+This chapter is not about our work, but a general discussion of secure group
+communications - our model of what it is, and "ideal" properties that *might*
+be achieved. Often, lists of security properties may seem arbitrary, with long
+names seemingly unrelated to each other. We take a more methodical approach,
+and try to classify these properties within a general framework.
 
 Our project goals only focus on a subset of these. Even so, enumerating all the
 possibilities that we can think of, is useful for future reference and for
@@ -50,7 +50,7 @@ messages to the current session membership, and receive these events from each
 other. Events are only visible to those who are part of the session membership
 of the event generator, when they generated it. For example, joining members
 cannot read messages that were written before the author saw them join (unless
-an old member leaks the contents to them, outside of the protocol).
+an old member leaks the contents to them, outside of the protocol). [#rejn]_
 
 On the transport level, we assume an efficient packet broadcast operation, that
 costs time near-constant in the number of recipients, and bandwidth near-linear
@@ -59,28 +59,25 @@ costs time near-constant in the number of recipients, and bandwidth near-linear
 author and readers of a logical message; our choice of terminology tries to
 make this clear and unambiguous.
 
-For completeness, we note that a real system often unintentionally generates
-"side channel" information, beyond the purpose of the model. This includes:
+For completeness, we observe that a real system often unintentionally generates
+"side channel" information, beyond the purpose of the model. This includes the
+time, space, energy cost of computation; the size, place of storage; the time,
+size, route of communications; and probably more that we've missed. Often but
+not always, it is not possible to avoid generating much of this information.
 
-- time, space, energy cost of processing
-- size, location of storage
-- time, size, route of communications
+In summary, we've enumerated the types of information in our model: membership,
+ordering, content, and side channels. Next, we'll discuss and classify the
+security properties we might want, and apply them to each of these types.
 
-and probably more that we've missed. Generation of this information is often
-but not always unavoidable. We'll keep this topic in mind for later.
-
-We've enumerated the types of information that we have - membership, ordering,
-content, and side channel data. Next, we'll discuss how each of the abstract
-properties (from the previous section) apply to each of these types.
-
-We currently don't have a good model of what it precisely means to *rejoin* a
-session; we will probably revisit this topic in the future.
-
-TODO: rw above a little bit
-
-.. [#keyv] for example, "WARNING: the authenticity and privacy of this session
+.. [#keyv] For example, "WARNING: the authenticity and privacy of this session
     is dependant on the unknown validity of the binding $key |LeftRightArrow|
     $user" or perhaps something less technical.
+
+.. [#rejn] We don't yet have a good model of what it should precisely mean to
+    *rejoin* a session. This "happens to work" with what we've implemented, but
+    is not easily extensible to asynchronous modes. Specifically, it's unclear
+    how best to consistently define the relative ordering of messages. We will
+    revisit this topic in future and explore it in more depth.
 
 Security properties
 ===================
@@ -105,23 +102,27 @@ can suggest a few fundamental security properties:
   information.
 
 We'll deal with efficiency in more specific terms later. For now, we discuss
-how authenticity and confidentiality apply to the information types from above.
-Even though we don't try to achieve all of these, being aware of them enables
-us to avoid decisions that destroy the possibility to achieve them in future.
+how authenticity and confidentiality apply to the types of information from our
+session model.
 
 +-------------------+-------------------+-------------------+
 |                   | Authenticity      | Confidentiality   |
 +===================+===================+===================+
-| Existence         | auto              | research          |
+| Existence         | automatic         | research topic    |
 +-------------------+-------------------+-------------------+
-| Side channels     | unneeded          | research          |
+| Side channels     | unneeded          | research topic    |
 +-------------------+-------------------+-------------------+
-| Membership        | crypto            | research          |
+| Membership        | via crypto        | research topic    |
 +-------------------+-------------------+-------------------+
-| Ordering          | crypto            | unknown           |
+| Ordering          | via crypto        | not explored yet  |
 +-------------------+-------------------+-------------------+
-| Contents          | crypto            | crypto            |
+| Contents          | via crypto        | via crypto        |
 +-------------------+-------------------+-------------------+
+
+The above is a summary of current best techniques for achieving each property.
+Even though we don't try to achieve all of them, being aware of them allows us
+to avoid decisions that destroy the possibility to achieve them in the future.
+We follow this up with slightly more detailed notes:
 
 Auth. of session existence
   This is achieved automatically by authenticity of any of the other types; we

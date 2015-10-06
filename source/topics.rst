@@ -2,7 +2,8 @@
 Topics
 ======
 
-TODO: brief intro
+This chapter describes the goals for our messaging protocol, the constraints we
+chose, and a discussion of the issues that occur under these contexts.
 
 Security goals
 ==============
@@ -82,6 +83,8 @@ Under insider corruption (and under active attack):
 | [x] unavoidable, as explained in the previous chapter.
 | [+] imperfect, theoretically improvable, but we have no immediate plans to.
 
+.. _distributed-systems:
+
 Distributed systems
 ===================
 
@@ -94,49 +97,59 @@ warning which is 95% likely to be a false positive, is useless information and
 a very bad user experience that may push them towards less secure applications.
 
 Generally in a distributed system, events may happen concurrently, so ideally a
-partial order (directed acyclic graph) rather than a total order (line) should
+causal order (directed acyclic graph) rather than a total order (line) should
 be used to represent the ordering of events. We do this for messages, so this
 component of our system may be re-used in asynchronous systems, without major
 redesign.
 
 However, group key agreements (which is how we implement membership changes)
-have traditionally not been developed with this consideration in mind. The main
-problem that needs to be solved here, would be to define a method to merge the
-results of two concurrent operations, or even the operations themselves. We
-have not tried to do this, as it seems complicated and highly dependent on the
-GKA used. Instead, we have developed a system to enforce and verify that these
-operations happen in a consistent total order, that has zero bandwidth cost and
-generalises to *any* GKA (that satisfies certain constraints).
+historically have not been developed with this consideration in mind. An ideal
+solution would define how to merge the results of two concurrent operations, or
+even how to merge the operations themselves. But we could not find literature
+that even mentions this problem, and we are unsure how to begin to approach it.
+Based on our limited knowledge in this area, it seems reasonable at least that
+any solution would be highly specific to the GKA used, limiting our future
+options for replacing cryptographic components.
 
-TODO: add something about group transport channels
+For now, we give up causal ordering for membership operations, and instead
+enforce a linear ordering for them. To make this easier, we restrict ourselves
+to a group transport channel, that takes responsibility for the delivery of
+channel events (messages and membership changes), reliably and in a consistent
+order. We do not *assume* this; we detect any deviation from it and notify the
+user, but our system is efficient if the transport is honest.
 
 Beyond this, there are several more non-security distributed systems issues,
 that relate to the integration of cryptographic logic in the context of a group
-transport channel (commonly implemented by insecure group messaging systems),
-that we must figure out graceful low-failure-rate solutions for:
+transport channel. These situations all have the potential to mess up the state
+of a naive implementation:
 
-- When a user enters the channel during a GKA, what should they do?
-- When a user leaves the channel during a GKA, what do others do?
-- A member might start a GKA and send the first packet to the other channel
-  members M, but when others receive it perhaps the channel membership is now
-  different from M, or there was another operation that jumped in "before" it.
-  How should we detect and resolve this?
-- What happens if different GKA packets (initial or final), are decodeable by
-  different members? Some of them may not yet be part of the cryptographic
-  session. If we're not careful, they will think different things about the
-  state of the session, or of others' sessions.
-- What if some of the above things happen at the same time?
+- Two members start different operations concurrently (as mentioned above);
+- Two members try to complete an operation concurrently, in different ways;
+  e.g. "send the final packet" vs "send a request to abort";
+- A user enters the channel during an operation;
+- A user leaves the channel during an operation;
+- A member starts an operation and sends the first packet to the other channel
+  members M, but when others receive it the membership has changed to M', or
+  there was another operation that jumped in before it;
+- Different operation packets (initial or final) are decodeable by different
+  members, some of which are not part of the cryptographic session. If we're
+  not careful, they will think different things about the state of the session,
+  or of others' sessions;
+- Any of the above things could happen at the same time.
 
-Individual solutions to each of these are fairly straightforward, but making
-sure that these interact with each other in a sane way is not so. Then, there
-is the task of describing the intended behaviour *precisely*. Only when we have
-a precise idea on what is *supposed* to happen, can we construct a concrete
+We must design graceful low-failure-rate solutions for all of them. Individual
+solutions to each of these are fairly straightforward, but making sure that
+these interact with each other in a sane way is more complex. Then, there is
+the task of describing the intended behaviour *precisely*. Only when we have a
+precise idea on what is *supposed* to happen, can we construct a concrete
 system that isn't fragile, i.e. require mountains of patches for corner cases
 ignored during the initial hasty naive implementations.
 
 User experience
 ===============
 
-Reference msg-notes
+TODO: write this section
+
+Reference msg-notes.
 
 Link to corner cases. (maybe move to "Background" chapter)
