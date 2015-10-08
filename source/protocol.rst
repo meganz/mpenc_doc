@@ -200,30 +200,6 @@ verifies the signature, then decrypts the ciphertext.
 These are constant throughout the session, so that if the shared encryption key
 is broken, the confidentiality of message content is lost. In the future, we
 will experiment with implementing this component as a forward secrecy ratchet.
-Note that we already have forward secrecy *between* subsessions.
-
-One simple scheme is to deterministically split the key into n keys, one for
-each sender. Then, each key can be used within a hash-chain ratchet for the
-corresponding sender. Once all recipients have decrypted a message and deleted
-the key, the secrecy of messages encrypted with that key and previous ones is
-ensured, even if an attack compromises members' memory later. However, since
-this scheme does not distribute entropy between members, there is no chance to
-recover from a memory leak and try to regain secrecy for future messages.
-
-There is also the future option to make the message authentication confidential
-("deniable"). Roughly speaking, once a member initiates a subsession shutdown
-request ("FIN"), they may publish their signature key after everyone acks this
-request. This is safe (an attacker cannot re-use the key to forge messages) if
-we enforce that one may not author messages *after* a FIN, i.e. all receivers
-must refuse to accept such messages. However, this simple approach destroys our
-ability to authenticate our own acks of others' messages (e.g. *their* FIN)
-after we send our own FIN. So we probably need something a bit more complex,
-and we haven't worked out the details yet.
-
-There is the attack here that if others' acks to our FIN are blocked, then we
-will never be sure that it's safe to publish our signature key. This likely
-can't be defended under this type of scheme, since confidential authenticity
-isn't meaningful without authenticity (it would be "confidential nothing"); the
-equivalent attack also applies to OTR. To defend against this, we would need a
-session establishment protocol that is itself deniable, and then we don't need
-to mess around with publishing the keys used for message authentication.
+Note that we already have forward secrecy *between* subsessions. There is also
+the future option to make the message authentication confidential ("deniable").
+These directions are discussed further in :doc:`future-work`.
