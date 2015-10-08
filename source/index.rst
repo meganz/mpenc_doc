@@ -11,8 +11,8 @@ TODO: write introduction last.
    topics
    protocol
    engineering
+   crypto
    future-work
-   greeting
 
 Indices and tables
 ==================
