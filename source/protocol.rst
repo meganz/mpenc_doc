@@ -90,8 +90,9 @@ don't know "the previous operation", and to authenticate the parent references)
 as well as in the implementation (e.g. for 1-packet operations that are both
 "final" and "initial); more details are covered in [TODO: link].
 
-The advantage of this mechanism is that it has zero bandwidth cost, and
-generalises to *any* membership change protocol.
+The advantage of this *implicit* mechanism is that it has zero bandwidth cost,
+generalises to *any* membership change protocol, and does not depend on the
+liveness of a particular member as it would if we had an explicit leader.
 
 To cover the other :ref:`distributed-systems` issues, we also have a system of
 rules on how to react to various channel and session events. These work roughly
@@ -148,6 +149,11 @@ This gives some protection against arbitrary lies, but it is still possible to
 lie within these constraints. However, we don't offer protection for this; we
 believe that there is no benefit for an attacker to make such lies, and that
 the cost of any solution would not be worth the minor extra protection.
+
+References must also have the property that the same reference to a packet is
+interpreted (decrypted and verified into content, parents and membership) by
+all of its members identically. Our simple hash-based definition, together with
+using a shared group encryption key, guarantees this for our case.
 
 For a more detailed exploration, including tradeoffs of the "defer processing"
 approach to strong ordering, and ways to calculate references to have better

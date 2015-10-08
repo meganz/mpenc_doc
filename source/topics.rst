@@ -11,15 +11,17 @@ Security goals
 We do not try to provide confidentiality of session existence, membership, or
 metadata, under any attack scenario. However, we try to avoid incompatiblities
 with any future other systems that do provide these properties, based on our
-knowledge of existing research and systems that approximate these.
+knowledge of existing research and systems that approximate these. (We do use
+an opportunistic exponential padding scheme that hides the lowest bits of our
+content length, but have not analysed this under a strong threat model.)
 
 We aim to directly provide confidentiality of message content and authenticity
 of membership, ordering, and content; and later a limited form of confidential
 authenticity of ordering and content. An overview follows; we will expand on it
-in more detail in subsequent sections.
+in more detail in subsequent chapters.
 
-We achieve authenticity and confidentiality of message content with standard
-modern cryptographic primitives using ephemeral session keys. The security of
+We achieve authenticity and confidentiality of message content, by using modern
+standard cryptographic primitives with ephemeral session keys. The security of
 these keys, and the authenticity of session membership and boundary ordering
 (freshness), are achieved through a group key agreement and authentication
 protocol. At present we use our own protocol, but this could be replaced.
@@ -32,9 +34,9 @@ secrets leak or a corrupt insider) must still adhere to those rules.
 The authenticity of message membership (reliability, consistency) is achieved
 through the authenticity of message ordering, together with some rules that
 enforce liveness, using timeout warnings and continual retries. This *differs*
-from previous approaches (TODO: give examples) which try to achieve these
-properties through the session establishment protocol; we believe that they are
-more appropriately dealt with here, as will be justified later.
+from previous approaches [#gotr]_ which try to achieve these properties through
+the session establishment protocol; we believe that they are more appropriately
+dealt with here, as will be justified later.
 
 Additionally, our choice of mechanisms are intended to offer different levels
 of protection for these properties, under various attack scenarios:
@@ -83,6 +85,8 @@ Under insider corruption (and under active attack):
 | [x] unavoidable, as explained in the previous chapter.
 | [+] imperfect, theoretically improvable, but we have no immediate plans to.
 
+.. [#gotr] TODO: give links and examples
+
 .. _distributed-systems:
 
 Distributed systems
@@ -115,8 +119,8 @@ For now, we give up causal ordering for membership operations, and instead
 enforce a linear ordering for them. To make this easier, we restrict ourselves
 to a group transport channel, that takes responsibility for the delivery of
 channel events (messages and membership changes), reliably and in a consistent
-order. We do not *assume* this; we detect any deviation from it and notify the
-user, but our system is efficient if the transport is honest.
+order. [#xmpp]_ We do not *assume* this; we detect any deviation from it and
+notify the user, but our system is efficient if the transport is honest.
 
 Beyond this, there are several more non-security distributed systems issues,
 that relate to the integration of cryptographic logic in the context of a group
@@ -145,11 +149,75 @@ precise idea on what is *supposed* to happen, can we construct a concrete
 system that isn't fragile, i.e. require mountains of patches for corner cases
 ignored during the initial hasty naive implementations.
 
+.. [#xmpp] For example, XMPP MUC would be suitable for this purpose, since one
+    single server keeps a consistent order for the channel. In IRC, there may
+    be multiple servers that opportunistically bounce messages from clients
+    without trying to agree on a consistent order.
+
 User experience
 ===============
 
-TODO: write this section
+Independently of any actual attack or security warning, the distributed nature
+of our system requires us to consider how to represent *correct* information to
+users. Displaying inaccurate or vague information is a security risk *even
+without an attacker* because it can lead the user to believe incorrect things.
 
-Reference msg-notes.
+Here, we give an overview of these issues and our suggested solutions for them.
+Due to time constraints, we have not yet implemented these; but none of the
+options seem hard to construct, or complex for user experience. Avoiding any of
+these topics is always an option, which case the application will look like
+*and be as insecure as*, existing applications that do the same.
 
-Link to corner cases. (maybe move to "Background" chapter)
+A more detailed discussion is given at [TODO: link].
+
+Real parents of a message
+  Some messages may not be displayed immediately below the one(s) that they are
+  actually sent after, i.e. that the author saw when sending it.
+
+  Our suggestion: (a) allow the user to select a message (e.g. via mouse click,
+  long press or keyboard) upon which all non-ancestors are grayed out; and (b)
+  annotate the messages whose parents are not equal to the set { the preceding
+  message in the UI }, as a hint for the user to perform the selection.
+
+Messages sent before a membership change completes, but received afterwards
+  Obviously, this message has a different membership from the current session,
+  and it would be wrong not to display this difference.
+
+  Our suggestion: (a) when an operation completes, issue a UI notice about it
+  inline in the messages view; (b) allow the user to select a message to see
+  its membership, instead of trying to infer it from the session membership and
+  any "change" notices; and (c) annotate such messages as a hint for the user
+  to perform the selection.
+
+Progress and result of a membership change operation
+  If the user starts an operation then immediately sends a message, this is
+  still encrypted to the *old* membership. Unless we explicitly make it clear
+  that operations take a finite time, they may not realise this.
+
+  Our suggestion: issue UI notices inline in the messages view, when the user
+  proposes an operation and when it is rejected, is accepted (starts), fails or
+  succeeds; or (optionally) also when *others'* operations are rejected, are
+  accepted, fail or succeed.
+
+Messages received out-of-order
+  Some messages are sent, but the sent-later ones are received earlier.
+
+  Our suggestion: simply ignore the messages that are received too early, until
+  the missing gaps are filled. This might seem counter-intuitive, but there are
+  many reasons that this is the best behaviour, discussed [TODO: link]. There
+  are some other options, but we believe these are all strictly worse.
+
+Messages not yet acknowledged by all of its intended recipients
+  Here, we are unsure if everyone received what we sent, or received the same
+  messages that we received from others.
+
+  Our suggestion: (a) allow the user to select a message to see who has not yet
+  acknowledged it, out of its membership; (b) annotate such messages as a hint
+  for the user to perform the selection, after a grace timeout because it's
+  impossible to satisfy this immediately; and optionally (c) show a progress
+  meter for this condition for every message we send.
+
+Users not responding to heartbeats
+  This helps to detect transports dropping our messages.
+
+  Our suggestion: in the users view, gray out expired users.

@@ -324,7 +324,10 @@ For every type of information where we want authenticity *and* confidentiality,
 we should also aim for confidential authenticity - if the attacker should be
 unable to read its contents, they should also be unable to verify *anything*
 about it. As noted earlier, this is useful not merely for its own sake, but is
-essential if we want to protect the confidentiality of membership.
+essential if we want to protect the confidentiality of membership. Furthermore,
+this property can be removed on a higher layer, e.g. an opt-in method to sign
+all messages with public signature keys, but once lost it cannot be regained.
+So it is safer to default to *having* this property.
 
 Against an active attacker, this means that verification must be executable
 only by other members, i.e. depend on session secrets. Against a corrupt
