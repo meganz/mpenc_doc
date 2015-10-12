@@ -18,6 +18,19 @@ implementation work reliably enough to start testing. However, we recognise
 their importance at providing end-to-end guarantees; none of them are expected
 to be hard to achieve, and rough solutions have already been sketched out.
 
+Error and abort messages
+  We must add the ability to abort a membership change, either manually or
+  automatically after a timeout. Currently if someone disconnects, others will
+  be left waiting until they themselves leave the channel. This must be done
+  via an explicit "abort" packet that gets handled by the concurrency resolver,
+  to prevent races between members.
+
+  For liveness properties, we already have timeouts that emit local security
+  warnings if good conditions are not reached after a certain time. However,
+  user experience will benefit if we have explicit error messages that inform
+  other members of conditions such as "inconsistent history", that "fail-fast"
+  more quickly than our generous default timeouts.
+
 Server-order consistency checks
   We need to implement consistency checks for accepted operations, since we
   use the server's packet ordering. This is similar to our consistency checks

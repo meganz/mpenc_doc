@@ -53,14 +53,17 @@ this document.
    crypto_gka
    crypto_aske
 
-Each operation consists of the following stages:
+There are four operation types: *establish session*, *include member*, *exclude
+member* and *refresh group key*. Refresh may be thought of as a "no-op" member
+change and that is how our overall protocol system treats it. Each operation
+consists of the following stages:
 
 Protocol upflow (optional)
   The protocol upflow consists of a series of directed messages; one user sends
-  it to exactly one recipient, i.e. the next member in the ``MEMBER`` list. It
-  is used to "collect" information from one member to the next. In a transport
-  that *only* offers broadcast, the other recipients simply ignore packets not
-  meant for them (i.e. ``DEST`` is not them).
+  it to exactly one recipient, i.e. the next member in the ``MEMBER`` list of
+  records. It is used to "collect" information from one member to the next. In
+  a transport that *only* offers broadcast, the other recipients simply ignore
+  packets not meant for them (i.e. the ``DEST`` record is not them).
 
   Every upflow message includes the records marked [1] from the summary below.
   The first upflow message also includes records marked [2], which contains
@@ -82,7 +85,8 @@ Protocol downflow
 A greeting packet contains the following records, in order:
 
 * ``MESSAGE_SIGNATURE``, ``PROTOCOL_VERSION``, ``MESSAGE_TYPE``
-* ``GREET_TYPE`` Type and subtype of operation; see :ref:`operation-types`.
+* ``GREET_TYPE`` What operation the packet is part of, as well as which stage
+  of that operation the packet belongs to. [#gtyp]_
 * ``SOURCE`` User ID of the packet originator.
 * ``DEST`` (optional) User ID of the packet destination; if omitted, it means
   this is a broadcast (i.e. downflow) packet.
@@ -90,10 +94,9 @@ A greeting packet contains the following records, in order:
   times, one for each member participating in this operation, or in other words
   the set of members in the subsession that would be created on its success.
   This also defines the orders of participants in the upflow sequence.
-  TODO(gk): needs to be sorted in the right order.
 * [1] ``INT_KEY`` (multiple) Intermediate DH values for the GKA.
 * [1] ``NONCE`` (multiple) Nonces of each member for the ASKE.
-* [1] ``PUB_KEY`` (multiple) Ephemeral public signing key of a member.
+* [1] ``PUB_KEY`` (multiple) Ephemeral public session signing key of a member.
 * [2] ``PREV_PF`` Hash of the final packet of the previously completed
   operation, or a random string if this is the first operation.
 * [2] ``CHAIN_HASH`` Chain hash corresponding to that packet. [TODO: link def]
@@ -102,6 +105,8 @@ A greeting packet contains the following records, in order:
   had seen, from when they initiated the operation.
 * [3] ``SESSION_SIGNATURE``: Authenticated confirmation signature for the ASKE,
   signed with the long-term identity key of the packet author. [TODO: link]
+  TODO(xl): also want to hash group_key in here, to detect members tamper with
+  the group key e.g. giving different results to different members.
 
 1. Only for upflow messages and the first downflow message. During the upflow,
    this gets filled to a maximum of *n* occurences.
@@ -115,87 +120,21 @@ packets in this version, it is the byte sequence ``greetmsgsig``.
 
 Even though this ephemeral key is not authenticated against any identity keys
 at the start of the operation, it is so by the end via ``SESSION_SIGNATURE``.
-It is important not to allow this affect anything else in the overall session,
-until this authentication has taken place; our atomic treatment of operations
+It is important not to allow ongoing operations to affect anything else in the
+overall session, until this authentication has taken place; our atomic design
 satisfies this security requirement.
 
-.. _operation-types:
+Likewise, members may mess with the structure of packets as the operation runs,
+such as re-ordering the ``MEMBER`` list of records. However, there should be no
+security risk; inconsistent results will be detected via ``SESSION_SIGNATURE``
+and cause a failure of the overall operation.
 
-Operation Types
----------------
-
-The value of the ``GREET_TYPE`` record indicates what operation the message is
-part of, as well as which stage of that operation the packet belongs to.
-
-TODO(xl): do we really need this section?
-
-Currently, the value is an unsigned, two-byte integer number in big endian
-notation, that indicates a number of properties of the message.
-
-| Bit 0 / X: The message is an (0) Initial or (1) Auxilliary GKA / ASKE run.
-| Bit 1 / D: The message is an (0) upflow (chained sequenced) or (1) downflow
-  (group broadcast).
-| Bit 2 / G: The message (1) contains GKA information.
-| Bit 3 / S: The message (1) contains ASKE information.
-| Bit 4--6 / OP0--OP2: The operation sequence type that the key agreement
-  message is part of. These are as follows: (1) Initial Start, (2) Auxiliary
-  Include, (3) Auxiliary Exclude, (4) Auxiliary Refresh.
-| Bit 7 / I: If the message was sent by the (1) initiator (owner of the chat)
-  or (0) participant (part of a start or include sequence).
-| Bit 8 - 15: These are currently reserved. In an earlier prototype, bit 8 used
-  to denote an attempt to recover from stalled protocol flows or states.
-
-The following table shows all of the currently used values for
-the message type record.
-
-+-----------------------------------------------+---+-----------+---+---+---+---+
-| Bit name                                      | I | OP2...OP0 | S | G | D | X |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Bit position                                  | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
-+===============================================+===+===+===+===+===+===+===+===+
-| **Start**                                                                     |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Initiator initial upflow                      | 1 | 0 | 0 | 1 | 1 | 1 | 0 | 0 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Participant initial upflow                    | 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Participant initial downflow                  | 0 | 0 | 0 | 1 | 1 | 1 | 1 | 0 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Participant initial confirmation downflow     | 0 | 0 | 0 | 1 | 1 | 0 | 1 | 0 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| **Include**                                                                   |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Initiator include upflow                      | 1 | 0 | 1 | 0 | 1 | 1 | 0 | 1 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Participant include upflow                    | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 1 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Participant include downflow                  | 0 | 0 | 1 | 0 | 1 | 1 | 1 | 1 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Participant include confirmation downflow     | 0 | 0 | 1 | 0 | 1 | 0 | 1 | 1 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| **Exclude**                                                                   |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Initiator exclude downflow                    | 1 | 0 | 1 | 1 | 1 | 1 | 1 | 1 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Participant exclude confirmation downflow     | 0 | 0 | 1 | 1 | 1 | 0 | 1 | 1 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| **Refresh**                                                                   |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-| Initiator refresh downflow                    | 1 | 1 | 0 | 0 | 0 | 1 | 1 | 1 |
-+-----------------------------------------------+---+---+---+---+---+---+---+---+
-
-The current values are vestiges from previous iterations of the protocol, where
-we did things differently and with more variation. A better approach would be
-to infer this from the other records that are already part of the message, and
-eliminate the redundant information, which may be set to incorrect values by
-malicious participants. This will be done in a later iteration of the protocol.
-
-Protocol state machine
-----------------------
-
-chapter 7
-
-TODO: how this interacts with atomic G
+.. [#gtyp] The exact details may be viewed in the source code. The current
+    values are vestiges from previous iterations of the protocol, where we did
+    things differently and with more variation. A better approach would be to
+    infer this from the other records that are already part of the message, and
+    eliminate the redundant information, which may be set to incorrect values
+    by malicious participants. This will be done in a later iteration.
 
 Messages
 ========
@@ -209,7 +148,9 @@ A data packet contains the following records, in order:
 * ``SIDKEY_HINT`` A one byte hint, that securely gives the recipient an aid in
   efficiently selecting the decryption key for this message.
 * ``MESSAGE_SIGNATURE``, ``PROTOCOL_VERSION``, ``MESSAGE_TYPE``
-* ``MESSAGE_IV`` Initialisation vector for the symmetric block cipher.
+* ``MESSAGE_IV`` Initialisation vector for the symmetric block cipher. The
+  cipher we choose is malleable, to give better deniability when we publish
+  ephemeral signature keys, similar to OTR.
 * ``MESSAGE_PAYLOAD``. Ciphertext payload. The plaintext is itself a sequence
   of records, as follows:
 
@@ -222,26 +163,24 @@ A data packet contains the following records, in order:
 sequence ``$magic_number || H( sid || group_key ) || all_subsequent_records``.
 ``$magic_number`` is a fixed string to prevent the signature being injected
 elsewhere; for data packets in this protocol version, it is the byte sequence
-``datamsgsig``.
-
-TODO(xl): does this break deniability (that we would add in the future)?
-Adversary who knows sig key doesn't know ``H(*)`` so can't general new sigs...
+``datamsgsig``. Since a single ephemeral signing key may be used across several
+subsessions, the hash value ensures that each ciphertext is verifiably bound to
+a specific subsession. [#psig]_
 
 **Padding**. We use an opportunistic padding scheme that obfuscates the lower
 bits of the length of the message. This has not been analysed under an
 aggressive threat model, but is very simple and cannot possibly be harmful. The
 scheme is as follows:
 
-- Define a "baseline size", ``size_bl``. We have chosen 128 bytes for this, to
+- Define a baseline size ``size_bl``. We have chosen 128 bytes for this, to
   accommodate the majority of messages in average chats, while still remaining
   a multiple of our chosen cipher's block size of 16 bytes.
 - The value of ``MESSAGE_BODY`` is prepended by a 16-bit unsigned integer (in
   big-endian encoding) indicating its size.
-- Further zero bytes are appended up to ``size_bl - 1`` bytes (to always allow
-  for one byte of PKCS#5-like padding on block cipher encryption).
+- Further zero bytes are appended up to ``size_bl`` bytes.
 - If the payload is already larger than this, then we instead pad up to the
-  next power-of-two multiple of ``size_bl`` minus 1 (e.g. ``2 * size_bl - 1``,
-  ``4 * size_bl - 1``, ``8 * size_bl - 1``, etc) that can contain the payload.
+  next power-of-two multiple of ``size_bl`` (e.g. ``2 * size_bl``, ``4 *
+  size_bl``, ``8 * size_bl``, etc) that can contain the payload.
 
 **Trial decryption**. In general, at some points in time, it may be possible to
 receive a message from several different sessions. The ``SIDKEY_HINT`` record
@@ -260,6 +199,11 @@ with the ``from`` attribute of stanzas), this technique may be adapted further
 to select between the multiple decryption keys or multiple authentication keys
 (respectively) that are available to verify-decrypt packets.
 
+.. [#psig] When/if we come to publish ephemeral signature keys, we will also
+    have to publish all ``H( sid || group_key )`` values that were used by the
+    key, to ensure that a forger can generate valid packets without knowing the
+    group encryption keys.
+
 Encoding and primitives
 =======================
 
@@ -276,8 +220,7 @@ The cryptographic primitives that we use are:
 - Identity signature keys: ed25519 [TODO: link]
 - Session exchange keys: x25519 [TODO: link]
 - Session signature keys: ed25519
-- Message encryption: AES128 in CTR mode [TODO: link]. CTR mode is chosen to
-  ensure malleability after the signature key is published, similar to OTR.
+- Message encryption: AES128 in CTR mode [TODO: link].
 - Message references, key derivation, trial decryption hints: SHA256
 
 These have generally been chosen to match a general security level of 128 bit
