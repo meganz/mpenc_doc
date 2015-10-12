@@ -76,6 +76,8 @@ OTR, and has equivalent security. This is explored in more detail later. More
 modern techniques make the key agreement itself deniable (via a zero knowledge
 proof) but we're not expert enough in cryptography to do that here.
 
+.. _transport-integration:
+
 Transport integration
 =====================
 
@@ -83,18 +85,20 @@ We have the initial packet of each operation, reference the final packet of the
 previous finished operation (or null if the first). Likewise, the final packet
 of each operation references (perhaps implicitly, if this is secure) a specific
 initial packet. The concurrency resolver simply accepts the earliest packet in
-the channel with a given parent reference, and rejects other such packets.
+the channel with a given parent reference, and rejects other such packets. We
+also define a *chain hash* built from the sequence of accepted packets, that
+members verify the consistency of after each operation finishes.
 
-There are some more issues, both in the algorithm (e.g. for new members that
+We also handle further details both in the algorithm (e.g. for new members that
 don't know "the previous operation", and to authenticate the parent references)
 as well as in the implementation (e.g. for 1-packet operations that are both
-"final" and "initial); more details are covered in [TODO: link].
+"final" and "initial).
 
-The advantage of this *implicit* mechanism is that it has zero bandwidth cost,
+The advantage of this *implicit* agreement is that it has zero bandwidth cost,
 generalises to *any* membership change protocol, and does not depend on the
 liveness of a particular member as it would if we had an explicit leader.
 
-To cover the other :ref:`distributed-systems` issues, we also have a system of
+To cover the other :ref:`distributed-systems` cases, we also have a system of
 rules on how to react to various channel and session events. These work roughly
 along these principles:
 
@@ -112,16 +116,17 @@ along these principles:
   them to kick us from the channel, if and after the operation succeeds. Either
   way, we switch to a "null/solo" subsession only *after* leaving the channel.
 
-For full details of these rules and the rationale for them, along with more
-precise descriptions of the model for a general G, and of the group transport
-channel, see [TODO: link].
+For full details of our agreement mechanism, our transport integration rules,
+and the rationale for them, along with more precise descriptions of our model
+for a general G and of a group transport channel, see [msa-5h0]_.
 
 Message ordering
 ================
 
-As discussed :ref:`previously <distributed-systems>` and elsewhere [TODO: link]
-messages may be sent concurrently even in a group transport channel, and
-therefore we represent the transcript of messages as a causal order.
+As discussed :ref:`previously <distributed-systems>` and elsewhere [msg-2i0]_
+messages may be sent concurrently even in a group transport channel, and so we
+represent the transcript of messages as a cryptographic causal order. We take
+much inspiration from Git_ and OldBlue [12OBLU]_ for our ideas.
 
 Every message has an explicit set of references to the latest other messages
 ("parents") seen by the author when they wrote the message. These references
@@ -157,20 +162,23 @@ using a shared group encryption key, guarantees this for our case.
 
 For a more detailed exploration, including tradeoffs of the "defer processing"
 approach to strong ordering, and ways to calculate references to have better
-resistance against false claims, see [TODO: link].
+resistance against false claims, see [msg-2o0]_.
+
+.. _Git: https://git-scm.com/
 
 Reliability and consistency
 ===========================
 
 Due to our strong ordering property, we can interpret parent references as an
 implicit acknowledgement ("ack") that the author received every parent. Based
-on this, we can ensure end-to-end reliability and consistency; we take much
-inspiration from the core ideas of TCP.
+on this, we can ensure end-to-end reliability and consistency. We take much
+inspiration from the core ideas of TCP_.
 
 We require every message (those we send, *and* those we receive) to be acked by
 all recipients; if we (as the local user) don't observe these within a timeout,
 we warn the human user. We may also occasionally resend the packets of these
-messages, possibly including others' packets that we received.
+messages, possibly including others' packets that we received. Resends are all
+based on implicit signals; we have no explicit resend requests as in OldBlue.
 
 To ensure that we ack everything that everyone sent, we also occassionally send
 out acks automatically outside of the user's control. Due to strong ordering,
@@ -183,7 +191,9 @@ actually fully-acked. This includes a formal session "shutdown" process.
 
 For a more detailed exploration, including resend algorithms, timing concepts,
 different ack semantics, why we must have end-to-end authenticated reliability,
-and the distinction between consistency and consensus, see [TODO: link].
+and the distinction between consistency and consensus, see [msg-2c0]_.
+
+.. _TCP: https://en.wikipedia.org/wiki/Transmission_Control_Protocol
 
 Message encryption
 ==================

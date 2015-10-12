@@ -86,8 +86,8 @@ as retries in the case of transport hiccups, etc.
 
 The receive handler roughly runs as follows. For each incoming channel event:
 
-1. if it is a channel membership change, then react to as part of transport
-   integration [TODO: link];
+1. if it is a channel membership change, then react to as part of
+   :ref:`transport-integration`;
 2. else, if it is a membership operation packet:
 
    - if it is relevant to the concurrency resolver, pass it to that, which may
@@ -111,7 +111,7 @@ also replace the cryptographic primitives within each component - e.g. DH key
 exchange, signature schemes, hash functions and symmetric ciphers - as
 necessary, based on the recommendations of the wider community.
 
-For more technical details, see our API documentation. [TODO: link].
+For more technical details, see our API documentation [mpenc-api]_.
 
 Internal components
 ===================
@@ -289,7 +289,7 @@ Future
 
 We also have more complex utilities like Monitor, built on top of Observable
 and its friends, used to implement liveness and freshness behaviours. For more
-details, see the API documentation [TODO: link].
+details, see the API documentation [mpenc-api]_.
 
 High-level
 ----------

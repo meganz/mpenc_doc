@@ -31,12 +31,13 @@ message content, together with some rules that enforce logical consistency.
 That is, someone who can authenticate message contents (either an attacker via
 secrets leak or a corrupt insider) must still adhere to those rules.
 
-The authenticity of message membership (reliability, consistency) is achieved
-through the authenticity of message ordering, together with some rules that
-enforce liveness, using timeout warnings and continual retries. This *differs*
-from previous approaches [#gotr]_ which try to achieve these properties through
-the session establishment protocol; we believe that they are more appropriately
-dealt with here, as will be justified later.
+The authenticity of message membership (including reliability, consistency) is
+achieved through the authenticity of message ordering, together with some rules
+that ensure liveness using timeout warnings and continual retries. This differs
+from previous approaches [09MPOM]_ [13GOTR]_ which achieve those via a separate
+cryptographic mechanism. We believe that our approach is a cleaner separation
+of concerns, requiring *no extra cryptography* beyond author authentication and
+reusing basic concepts from time-tested reliability algorithms such as TCP.
 
 Additionally, our choice of mechanisms are intended to offer different levels
 of protection for these properties, under various attack scenarios:
@@ -84,8 +85,6 @@ Under insider corruption (and under active attack):
 
 | [x] unavoidable, as explained in the previous chapter.
 | [+] imperfect, theoretically improvable, but we have no immediate plans to.
-
-.. [#gotr] TODO: give links and examples
 
 .. _distributed-systems:
 
@@ -168,8 +167,6 @@ options seem hard to construct, or complex for user experience. Avoiding any of
 these topics is always an option, which case the application will look like
 *and be as insecure as*, existing applications that do the same.
 
-A more detailed discussion is given at [TODO: link].
-
 Real parents of a message
   Some messages may not be displayed immediately below the one(s) that they are
   actually sent after, i.e. that the author saw when sending it.
@@ -204,7 +201,7 @@ Messages received out-of-order
 
   Our suggestion: simply ignore the messages that are received too early, until
   the missing gaps are filled. This might seem counter-intuitive, but there are
-  many reasons that this is the best behaviour, discussed [TODO: link]. There
+  many reasons that this is the best behaviour, discussed in [msg-2oo]_. There
   are some other options, but we believe these are all strictly worse.
 
 Messages not yet acknowledged by all of its intended recipients
@@ -221,3 +218,5 @@ Users not responding to heartbeats
   This helps to detect transports dropping our messages.
 
   Our suggestion: in the users view, gray out expired users.
+
+A more detailed discussion of these topics is given at [msg-hci]_.

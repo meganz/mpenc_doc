@@ -86,16 +86,16 @@ Messaging ratchet for intra-subsession forward secrecy
 
   One simple scheme is to deterministically split the key into n keys, one for
   each sender. Then, each key can be used within a hash-chain ratchet for the
-  corresponding sender. Once all recipients have decrypted a message and deleted
+  corresponding sender. Once all recipients have decrypted a packet and deleted
   the key, the secrecy of messages encrypted with that key and previous ones is
   ensured, even if an attack compromises members' memory later. However, since
-  this scheme does not distribute entropy between members, there is no chance to
-  recover from a memory leak and try to regain secrecy for future messages.
+  this scheme does not distribute entropy between members, there is no chance
+  to recover from a memory leak and try to regain secrecy for future messages.
 
 Better membership change protocol
-  Use a constant-round group key exchange such as that from np1sec [TODO link];
-  or simply pairwise Triple-DH between all group members, which extends better
-  to asynchronous messaging. In both cases, we get deniability for free without
+  Use a constant-round group key exchange such as that from [np1sec]_, or even
+  pairwise [Triple-DH]_ between all group members which extends better to
+  asynchronous messaging. In both cases, we get deniability for free without
   having to publish signatures.
 
 More functionality

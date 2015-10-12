@@ -13,6 +13,7 @@ TODO: write introduction last.
    engineering
    crypto
    future-work
+   references
 
 Indices and tables
 ==================

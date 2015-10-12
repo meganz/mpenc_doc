@@ -4,9 +4,9 @@ TODO: review this and add references
 Group Key Agreement (GKA)
 *************************
 
-The group key agreement is conducted according to [CLIQUES]_.  The
+The group key agreement is conducted according to CLIQUES [00CLIQ]_.  The
 protocol has only been modified towards using ECDH based on
-[Curve25519]_ instead of classical DH exponentiation.
+x25519 instead of classical DH exponentiation.
 
 The protocol allows for a shared group key negotiation for :math:`n`
 members in a total of :math:`O(n)` messages sent, and re-negotiations
@@ -58,7 +58,7 @@ Initial Key Agreement (IKA)
 ===========================
 
 The initial key agreement follows the concept as outlined by the
-[CLIQUES]_ IKA.1 protocol.  The protocol distinguishes between two
+[00CLIQ]_ IKA.1 protocol.  The protocol distinguishes between two
 phases: The "upflow" phase and the "downflow" phase.  In the upflow,
 each participant generates their private key contribution, and
 computes it into the elements of the (growing) chain of intermediate

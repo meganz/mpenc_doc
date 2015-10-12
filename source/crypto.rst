@@ -97,20 +97,23 @@ A greeting packet contains the following records, in order:
 * [1] ``INT_KEY`` (multiple) Intermediate DH values for the GKA.
 * [1] ``NONCE`` (multiple) Nonces of each member for the ASKE.
 * [1] ``PUB_KEY`` (multiple) Ephemeral public session signing key of a member.
-* [2] ``PREV_PF`` Hash of the final packet of the previously completed
+* [2] ``PREV_PF`` Packet ID of the final packet of the previously completed
   operation, or a random string if this is the first operation.
-* [2] ``CHAIN_HASH`` Chain hash corresponding to that packet. [TODO: link def]
+* [2] ``CHAIN_HASH`` Chain hash corresponding to that packet, as calculated by
+  the initiator of this operation. This allows joining members to calculate
+  subsequent hashes of their own, to compare with others for consistency.
 * [2] ``LATEST_PM`` (multiple) References to the latest (logical, i.e. data)
-  messages from the previous subsession that the initiator of the operation
+  messages from the previous subsession that the initiator of this operation
   had seen, from when they initiated the operation.
-* [3] ``SESSION_SIGNATURE``: Authenticated confirmation signature for the ASKE,
-  signed with the long-term identity key of the packet author. [TODO: link]
-  TODO(xl): also want to hash group_key in here, to detect members tamper with
-  the group key e.g. giving different results to different members.
+* [3] ``SESSION_SIGNATURE``: Authenticated :ref:`confirmation signature
+  <aske-session-sig>` for the ASKE, signed with the long-term identity key of
+  the packet author.
 
 1. Only for upflow messages and the first downflow message. During the upflow,
    this gets filled to a maximum of *n* occurences.
-2. Only for the initial packet of any operation, for the concurrency resolver.
+2. Only for the initial packet of any operation. These fields are ignored by
+   the greeting protocol; instead they are used by the concurrency resolver.
+   See :ref:`transport-integration` and [msa-5h0]_ for details.
 3. Only for downflow messages, to confirm the ASKE keys.
 
 ``MESSAGE_SIGNATURE`` is made by the ephemeral signing key and signs the byte
@@ -150,7 +153,7 @@ A data packet contains the following records, in order:
 * ``MESSAGE_SIGNATURE``, ``PROTOCOL_VERSION``, ``MESSAGE_TYPE``
 * ``MESSAGE_IV`` Initialisation vector for the symmetric block cipher. The
   cipher we choose is malleable, to give better deniability when we publish
-  ephemeral signature keys, similar to OTR.
+  ephemeral signature keys, similar to OTR [OTR-spec]_.
 * ``MESSAGE_PAYLOAD``. Ciphertext payload. The plaintext is itself a sequence
   of records, as follows:
 
@@ -173,8 +176,8 @@ aggressive threat model, but is very simple and cannot possibly be harmful. The
 scheme is as follows:
 
 - Define a baseline size ``size_bl``. We have chosen 128 bytes for this, to
-  accommodate the majority of messages in average chats, while still remaining
-  a multiple of our chosen cipher's block size of 16 bytes.
+  accommodate the majority (e.g. see [08MCIC]_) of messages in chats, while
+  still remaining a multiple of our chosen cipher's block size of 16 bytes.
 - The value of ``MESSAGE_BODY`` is prepended by a 16-bit unsigned integer (in
   big-endian encoding) indicating its size.
 - Further zero bytes are appended up to ``size_bl`` bytes.
@@ -217,11 +220,11 @@ This encoding may change at a later date.
 
 The cryptographic primitives that we use are:
 
-- Identity signature keys: ed25519 [TODO: link]
-- Session exchange keys: x25519 [TODO: link]
+- Identity signature keys: ed25519_
+- Session exchange keys: x25519_
 - Session signature keys: ed25519
-- Message encryption: AES128 in CTR mode [TODO: link].
-- Message references, key derivation, trial decryption hints: SHA256
+- Message encryption: AES128_ in `CTR mode`_
+- Message references, key derivation, trial decryption hints: SHA256_
 
 These have generally been chosen to match a general security level of 128 bit
 of entropy on a symmetric block cipher. This is roughly equivalent to 256 bit
@@ -230,3 +233,9 @@ traditional discrete logarithm problem based public-key ciphers (e.g. DSA).
 
 We may switch to a more modern block cipher at a future date, that is more
 easily implementable and verifiable in constant time.
+
+.. _ed25519: http://ed25519.cr.yp.to/
+.. _x25519: http://cr.yp.to/ecdh.html
+.. _AES128: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+.. _CTR mode: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Counter_.28CTR.29
+.. _SHA256: https://en.wikipedia.org/wiki/SHA-2

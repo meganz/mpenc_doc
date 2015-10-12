@@ -25,12 +25,12 @@ signature key exchange (ASKE) protocol.
 
 The approach to derive a contributary session ID from participants'
 nonces to ensure freshness, as well as retrospective authentication of
-the session at the end of the agreement has been inspired by [DGKA]_.
+the session at the end of the agreement has been inspired by [06DGKA]_.
 Van Gundy has also based his "Improved Deniable Signature Key Exchange
-for mpOTR" [mpOTR-DSKE]_ on an extension of [DGKA]_.  As the CLIQUES
+for mpOTR" [13DSKE]_ on an extension of [06DGKA]_.  As the CLIQUES
 protocol requires an upflow (sequential collect) and downflow
 (broadcast) structure (see :doc:`crypto_gka`), whereas
-[DGKA]_ and [mpOTR-DSKE]_ are based on a constant-round broadcast
+[06DGKA]_ and [13DSKE]_ are based on a constant-round broadcast
 protocol.  To make the overall combined protocol flow more efficient,
 (combined key agreement messages, see :doc:`crypto`), the
 commitment phase (see below) messages have been sequentialised into a
@@ -113,9 +113,13 @@ Message contents:
    * Nonces: :math:`(k_1,\; k_2,\; k_3)`
    * Ephemeral public signing keys: :math:`(E_1,\; E_2,\; E_3)`
 
+.. _aske-session-sig:
 
 Phase 2 -- Acknowledgement
 ==========================
+
+TODO(xl): we probably also want to hash group_key in here, to detect members
+tampering with the group key e.g. giving different results to different members.
 
 In the acknowledgement phase every member who is in possession of
 complete lists of participants' contributions confirms their ephemeral
