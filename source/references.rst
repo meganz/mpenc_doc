@@ -25,6 +25,13 @@ References
     DOI=10.1109/71.877936
   | http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.51.890&rep=rep1&type=pdf
 
+.. [03SPAG]
+  | J. Katz, M. Yung.
+    *Scalable Protocols for Authenticated Group Key Exchange*
+  | Journal of Cryptology 20(1): 85-113, 2007.
+  | First appeared in: Advances in Cryptology - Crypto 2003, LNCS vol. 2729.
+  | https://www.cs.umd.edu/~jkatz/papers/multi-auth-full.pdf
+
 .. [04OTRC]
   | N. Borisov, I. Goldberg, and E. Brewer.
     *Off-the-record communication, or, why not to use PGP*.
@@ -48,6 +55,12 @@ References
     *Multi-party Off-the-Record Messaging*.
   | Proceedings of the 16th ACM conference on Computer and Communications Security (CCS) 2009.
   | http://www.cypherpunks.ca/~iang/pubs/mpotr.pdf
+
+.. [12SDGK]
+  | K. Neupane, R. Steinwandt, and A. S. Corona.
+    *Scalable Deniable Group Key Establishment*
+  | 5th International Symposium, Foundations and Practice of Security (FPS) 2012.
+  | https://eprint.iacr.org/2012/504.pdf
 
 .. [12OBLU]
   | M. D. Van Gundy and H. Chen.

@@ -224,7 +224,8 @@ The cryptographic primitives that we use are:
 - Session exchange keys: x25519_
 - Session signature keys: ed25519
 - Message encryption: AES128_ in `CTR mode`_
-- Message references, key derivation, trial decryption hints: SHA256_
+- Message references, packet references, trial decryption hints: SHA256_
+- Key derivation: `HKDF`_-SHA256
 
 These have generally been chosen to match a general security level of 128 bit
 of entropy on a symmetric block cipher. This is roughly equivalent to 256 bit
@@ -239,3 +240,4 @@ easily implementable and verifiable in constant time.
 .. _AES128: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 .. _CTR mode: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Counter_.28CTR.29
 .. _SHA256: https://en.wikipedia.org/wiki/SHA-2
+.. _HKDF: https://tools.ietf.org/html/rfc5869

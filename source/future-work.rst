@@ -50,6 +50,8 @@ Flow control
   received out-of-order.) This is already implemented in a non-production-ready
   Python prototype, with random integration tests, and only needs to be ported.
 
+.. _publish-sess-sig-keys:
+
 Publish signature keys
   We need make signature-key publishing logic work properly, so that we have
   deniable authentication for message content.
