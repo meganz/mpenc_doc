@@ -38,6 +38,12 @@ References
   | Proceedings of the 2004 ACM workshop on Privacy in the Electronic Society (WPES) 2004.
   | http://www.cypherpunks.ca/otr/otr-wpes.pdf
 
+.. [06ROBO]
+  | M. Miller.
+    *Robust Composition: Towards a Unified Approach to Access Control and Concurrency Control*.
+  | Ph.D. thesis, Johns Hopkins University.
+  | http://www.erights.org/talks/thesis/markm-thesis.pdf
+
 .. [06DGKA]
   | J.-M. Bohli and R. Steinwandt.
     *Deniable Group Key Agreement*.

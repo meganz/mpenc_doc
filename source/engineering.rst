@@ -10,7 +10,7 @@ protocol is well-defined. However, protocols that support advanced features or
 give strong guarantees are inherently more complex. Some people may argue that
 the complexity is not worth the benefit, especially if it includes new ideas
 untested by existing protocols. Our hope is that a high-level description of an
-*implementation* will help reduce this over-estimation of the complexity.
+*implementation* will help moderate this over-estimation of the complexity.
 Another hope is that it will make audits and code reviews easier and faster.
 
 Public interface
@@ -23,17 +23,16 @@ define the following interfaces for these purposes:
 Session (interface)
   This represents a group messaging session that follows model in the previous
   chapter. It defines an interface for higher layers (e.g. the UI) to interact
-  with, which consists of (a) one input method to attempt to send a message or
-  change the session membership; (b) one output pipe for the user to receive
-  session events or security warnings; and (c) various query methods, such as
-  to get its current membership, the stream of messages accepted so far, etc.
-  [#sess]_
+  with, which consists of (a) one input method to send a message or change the
+  session membership; (b) one output mechanism for the user to receive session
+  events or security warnings; and (c) various query methods, such as to get
+  its current membership, the stream of messages accepted so far, etc. [#sess]_
 
 GroupChannel (interface) [$]
   This represents a group transport channel. It defines an interface for higher
   layers (e.g. a Session) to interact with, which consists of (a) one input
-  method to attempt to send a packet or change the channel membership; (b) one
-  output pipe to receive channel events; and (c) various query methods. Actions
+  method to send a packet or change the channel membership; (b) one output
+  mechanism to receive channel events; and (c) various query methods. Actions
   may be ignored by the transport or satisfied exactly once, possibly after we
   receive further channel events not by us. The transport is supposed to send
   events to all members in the same order, but members must verify this.
@@ -49,8 +48,8 @@ channel), and the corresponding concepts for channel membership *are* distinct.
 So to use our library, an external application must:
 
 1. Implement GroupChannel for the chosen transport, e.g. XMPP.
-2. Construct an instance of HybridSession (below), passing an instance of (1)
-   to it along with other configuration options.
+2. Construct an instance of HybridSession (see below), passing an instance of
+   (1) to it along with any other configuration options it wants.
 3. Hook the application UI into the API provided by Session. The transport
    layer may be ignored completely, since that is handled by our system.
 
@@ -63,6 +62,12 @@ work will architect their future software with greater foresight.
 
 The remainder of this document contains a description of our implementation;
 but knowledge beyond this point is not necessary merely to *use* our system.
+
+.. [#sess] We do not define a lower (transport) interface in Session because
+    implementations or subtypes may require a *particular* transport; we leave
+    it to them to define what that is. For example, HybridSession requires a
+    GroupChannel which makes it unsuitable for asynchronous messaging; but
+    another subtype of Session might support that.
 
 Session architecture
 ====================
@@ -93,12 +98,12 @@ The receive handler roughly runs as follows. For each incoming channel event:
    - if it is relevant to the concurrency resolver, pass it to that, which may
      cause an operation to start or finish (with success or failure);
    - if an operation is ongoing, pass it to the subprocess running that;
-   - else reject the packet - it's not appropriate at this time.
+   - else reject the packet (i.e. don't queue it for another try later).
 
 3. else, try to verify-decrypt it as a message in the current subsession;
 
    - if the packet verifies but fails to be accepted into the transcript due
-     to missing parents, put it in a try-accept queue *in this subsession*, to
+     to missing parents, put it in a queue *specific to this subsession*, to
      try this process again later (and similarly for the next case);
 
 4. else, try to verify-decrypt it as a message in the previous subsession;
@@ -109,7 +114,7 @@ The components that deal directly with cryptography are marked [*] above. These
 may be improved independently from the others, and from HybridSession. We may
 also replace the cryptographic primitives within each component - e.g. DH key
 exchange, signature schemes, hash functions and symmetric ciphers - as
-necessary, based on the recommendations of the wider community.
+necessary, based on the recommendations of the cryptography community.
 
 For more technical details, see our API documentation [mpenc-api]_.
 
@@ -125,7 +130,7 @@ ServerOrder [$]
 Greeter, Greeting (interface) [$]
   Greeting is a component representing a multi-packet operation, defined as an
   interface with a packet-based transport consisting of (a) one input method to
-  receive data packets; (b) one output pipe to send out data packets; and (c)
+  receive data packets; (b) one output mechanism to send data packets; and (c)
   various query methods, such as to get a Future for the operation's result, a
   reference to any previous operation, the intended next membership, etc.
   Typically, this may be implemented as a state machine.
@@ -144,10 +149,10 @@ SessionBase
   from message parent references and using some of the components below.
 
   The component provides an interface with a packet-based transport consisting
-  of (a) one input method to receive data packets; (b) one output pipe to send
-  out data packets; and an interface with the UI consisting of (c) one output
-  pipe for the user to receive notices; (d) various action methods for the user
-  to call, such as sending messages and ending the session; and (e) various
+  of (a) one input method to receive data packets; (b) one output mechanism to
+  send data packets; and an interface with the UI consisting of (c) one output
+  mechanism for the user to receive notices; (d) various action methods for the
+  user to use, such as sending messages and ending the session; and (e) various
   query methods similar to those found in Session.
 
   Unlike with Session(a), there is no attempt to simplify SessionBase(d) to
@@ -155,7 +160,7 @@ SessionBase
   the future; it is not meant for external clients of our system.
 
 Everything from here on are components of SessionBase; HybridSession does not
-directly interact with them.
+directly interact with them (except MessageLog).
 
 MessageSecurity (interface)
   This defines an interface for the authentication and encryption of messages.
@@ -167,13 +172,14 @@ Transcript, MessageLog
   These are append-only data structures that hold messages in causal order.
 
   Transcript is a data structure that holds a causal ordering of all messages,
-  including non-content messages used for flow control, and other non-user
+  including non-content messages used for flow control and other lower-level
   concerns. It provides basic query methods, and graph traversal and recursive
   merge algorithms. (The latter is only for aiding future research topics.)
 
-  MessageLog presents some linearisation of this for UX purposes, optionally
-  aggregates multiple transcripts (from multiple subsessions in HybridSession),
-  and filters out non-content messages whilst retaining relative ordering.
+  MessageLog is a *user-level* abstraction of Transcript; it linearises the
+  underlying causal order for UX purposes, aggregates multiple transcripts
+  (from multiple subsessions) together, and filters out non-content messages
+  whilst retaining relative ordering.
 
 FlowControl
   This defines an interface that SessionBase consults on liveness issues, such
@@ -192,13 +198,9 @@ ConsistencyMonitor
 PresenceTracker
   This is a component that tracks and renews own and others' latest activity in
   a session, and issues warnings if these expire. This helps to detect drops by
-  an unreliable transport or malicious attacker.
-
-.. [#sess] We do not define a lower (transport) interface in Session because
-    implementations or subtypes may require a *particular* transport, so they
-    define what that is. For example, HybridSession requires a GroupChannel
-    which makes it unsuitable for asynchronous messaging; but another subtype
-    of Session might support that.
+  an unreliable transport or malicious attacker. It can send out heartbeats to
+  prevent or recover from such situations, but this is optional since it has
+  some bandwidth cost.
 
 Utilities
 =========
@@ -220,21 +222,21 @@ use a synchronous publish-subscribe pattern. There are other options; the main
 reason we choose this is that *how* we consume inputs (of a given type) changes
 often. For example: each new message adds a requirement that we do some extra
 things on future messages; in trial decryption, the set of possible options
-changes; etc. Pub-sub is ideal for these issues: we can subscribe new consumers
-when we need to, and define the behaviour of these, as well as when to cancel
-the subscription, together in the source code.
+changes; etc. Pub-sub is ideal for these cases: we can subscribe new consumers
+when we need to, and define their behaviour and cancellation conditions close
+together in the source code.
 
 By contrast, other intra-process IO paradigms (e.g. channels) are mostly built
 around single consumers. Here, we'd have to collect all possible responses into
 the consumer, then add explicit state to control the activation of specific
 responses. This causes related concerns to be separated too much, and unrelated
-concerns to be grouped together too much, and the mechanisms for this are less
-standardised in libraries.
+concerns to be grouped together too much, and the mechanisms for doing this are
+less standardised across common libraries.
 
-By "synchronous" we mean that the publisher executes subscriber callbacks in
-its own thread. We understand the issues around this, but in our simple usage
-it makes reasoning about execution order more predictable, and means that we
-have no dependency on any specific external execution framework.
+By *synchronous* we mean that the publisher executes subscriber callbacks in
+its own thread. There are reentrancy issues around this [#reen]_, but in our
+simple usage it makes reasoning about execution order more predictable, and
+means that we have no dependency on any specific external execution framework.
 
 For long-running user-level operations, we use Futures, which is the standard
 utility for this sort of asynchronous "function call"-like operation, that is
@@ -290,6 +292,20 @@ Future
 We also have more complex utilities like Monitor, built on top of Observable
 and its friends, used to implement liveness and freshness behaviours. For more
 details, see the API documentation [mpenc-api]_.
+
+.. [#reen] *Reentrant publish* is when callbacks cause the producer to produce
+    new items *whilst* they are being run. This can cause unintended behaviour,
+    sometimes called an *interleaving hazard*, and is usually considered a bug.
+    See also *§13.1. Sequential Interleaving Hazards* in [06ROBO]_.
+
+    *Reentrant subscribe/cancel* is when subscriptions for the current producer
+    are modified *whilst* we are running the callbacks for one of its items.
+    The behaviour here must be precisely defined by the pub-sub system. For
+    example, web DOM events define that `cancels take affect from the current
+    run`__, but `subscribes only take effect from the next run`__.
+
+__ https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/removeEventListener#Notes
+__ https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Adding_a_listener_during_event_dispatch
 
 High-level
 ----------
@@ -357,4 +373,4 @@ This concludes the overview of our reference implementation. All the code that
 is not mentioned here, are straightforward applications of software engineering
 principles or algorithm writing, as applied to our protocol design (previous
 chapter) and software design (this chapter). For more details, see the API
-documentation and/or source code.
+documentation [mpenc-api]_ and/or source code.

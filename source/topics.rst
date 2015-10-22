@@ -11,12 +11,10 @@ Security goals
 We do not try to provide confidentiality of session existence, membership, or
 metadata, under any attack scenario. However, we try to avoid incompatiblities
 with any future other systems that do provide these properties, based on our
-knowledge of existing research and systems that approximate these. (We do use
-an opportunistic exponential padding scheme that hides the lowest bits of our
-content length, but have not analysed this under a strong threat model.)
+knowledge of existing research and systems that approximate these. [#mlen]_
 
-We aim to directly provide confidentiality of message content and authenticity
-of membership, ordering, and content; and later a limited form of confidential
+We aim to directly provide confidentiality of message content; authenticity of
+membership, ordering, and content; and (later) a limited form of confidential
 authenticity of ordering and content. An overview follows; we will expand on it
 in more detail in subsequent chapters.
 
@@ -37,13 +35,11 @@ that ensure liveness using timeout warnings and continual retries. This differs
 from previous approaches [09MPOM]_ [13GOTR]_ which achieve those via a separate
 cryptographic mechanism. We believe that our approach is a cleaner separation
 of concerns, requiring *no extra cryptography* beyond author authentication and
-reusing basic concepts from time-tested reliability algorithms such as TCP.
+reusing basic concepts from time-tested reliability protocols such as TCP.
 
-Additionally, our choice of mechanisms are intended to offer different levels
-of protection for these properties, under various attack scenarios:
-
-Under active communications attack:
-  Retain all security properties mentioned above, for all members.
+Our choice of mechanisms are intended to retain all these properties when under
+an active attack on the communication transport. Under stronger attacks, we
+have lower but still reasonable levels of protection:
 
 Under identity secrets leak against some targets (and active attack):
   Older sessions:
@@ -51,16 +47,16 @@ Under identity secrets leak against some targets (and active attack):
 
   Current sessions:
     - Retain all relevant security properties until the next membership change;
-    - [+] From the next change onwards, properties are as per *newer sessions*,
-      since in our system this requires identity secrets as well.
+    - [+] From the next change onwards, properties are as (a), since in our
+      system membership changes require identity secrets to execute.
 
-  Newer sessions:
+  Newer sessions (a):
     - [x] Attacker can open/join sessions as targets, read and participate;
     - Attacker *cannot* open/join sessions as non-targets, read or participate;
     - Retain all relevant security properties, for sessions whose establishment
       was not actively compromised.
 
-Under session secrets leak against some targets (and active attack):
+Under session secrets leak against some targets (and active attack) (b):
   Older sessions:
     - Retain all relevant security properties.
 
@@ -70,21 +66,24 @@ Under session secrets leak against some targets (and active attack):
     - Attacker *cannot* participate as non-targets.
 
   Newer sessions:
-    - [+] as per *identity secrets leak: new sessions*; our session secrets
-      unfortunately include identity secrets.
+    - [+] as (a); our session secrets unfortunately include identity secrets.
 
 Under insider corruption (and under active attack):
-  As per *session secrets leak*; but entries marked imperfect cannot be
-  improved upon. More specifically, the properties we *do* retain are:
+  As (b) except that entries marked imperfect cannot be improved upon. More
+  specifically, the properties we *do* retain are:
 
   - Some limited protection against false claims/omissions about ordering;
-  - (upcoming work) Retain confidential authenticity of ordering and content.
+  - (future work) Retain confidential authenticity of ordering and content.
 
   Note that these apply to all lesser attacks too; we mention them explicitly
   here so that this section is less depressing.
 
 | [x] unavoidable, as explained in the previous chapter.
 | [+] imperfect, theoretically improvable, but we have no immediate plans to.
+
+.. [#mlen] We do use an opportunistic exponential padding scheme that hides the
+    lowest bits of message length, but have not analysed this under a strong
+    adversarial model.
 
 .. _distributed-systems:
 
@@ -110,7 +109,7 @@ historically have not been developed with this consideration in mind. An ideal
 solution would define how to merge the results of two concurrent operations, or
 even how to merge the operations themselves. But we could not find literature
 that even mentions this problem, and we are unsure how to begin to approach it.
-Based on our limited knowledge in this area, it seems reasonable at least that
+Based on our moderate experience in this area, it seems feasible at least that
 any solution would be highly specific to the GKA used, limiting our future
 options for replacing cryptographic components.
 
@@ -123,8 +122,8 @@ notify the user, but our system is efficient if the transport is honest.
 
 Beyond this, there are several more non-security distributed systems issues,
 that relate to the integration of cryptographic logic in the context of a group
-transport channel. These situations all have the potential to mess up the state
-of a naive implementation:
+transport channel. These situations all have the potential to corrupt the
+internal state consistency of a naive implementation:
 
 - Two members start different operations concurrently (as mentioned above);
 - Two members try to complete an operation concurrently, in different ways;
@@ -150,8 +149,8 @@ ignored during the initial hasty naive implementations.
 
 .. [#xmpp] For example, XMPP MUC would be suitable for this purpose, since one
     single server keeps a consistent order for the channel. In IRC, there may
-    be multiple servers that opportunistically bounce messages from clients
-    without trying to agree on a consistent order.
+    be multiple servers that opportunistically forward messages from clients
+    to each other, without trying to agree on a consistent order.
 
 User experience
 ===============
@@ -204,7 +203,7 @@ Messages received out-of-order
   many reasons that this is the best behaviour, discussed in [msg-2oo]_. There
   are some other options, but we believe these are all strictly worse.
 
-Messages not yet acknowledged by all of its intended recipients
+Messages not yet acknowledged by all of its intended readers
   Here, we are unsure if everyone received what we sent, or received the same
   messages that we received from others.
 

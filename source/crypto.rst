@@ -53,6 +53,9 @@ this document.
    crypto_gka
    crypto_aske
 
+Combined authenticated group key agreement
+------------------------------------------
+
 There are four operation types: *establish session*, *include member*, *exclude
 member* and *refresh group key*. Refresh may be thought of as a "no-op" member
 change and that is how our overall protocol system treats it. Each operation

@@ -16,10 +16,10 @@ implemented yet. We list them below. We have delayed them because we consider
 them to be less-critical security properties, and wanted to focus on making our
 implementation work reliably enough to start testing. However, we recognise
 their importance at providing end-to-end guarantees; none of them are expected
-to be hard to achieve, and rough solutions have already been sketched out.
+to be hard to achieve, and solution outlines have already been sketched out.
 
 Error and abort messages
-  We must add the ability to abort a membership change, either manually or
+  We should add the ability to abort a membership change, either manually or
   automatically after a timeout. Currently if someone disconnects, others will
   be left waiting until they themselves leave the channel. This must be done
   via an explicit "abort" packet that gets handled by the concurrency resolver,
@@ -28,7 +28,7 @@ Error and abort messages
   For liveness properties, we already have timeouts that emit local security
   warnings if good conditions are not reached after a certain time. However,
   user experience will benefit if we have explicit error messages that inform
-  other members of conditions such as "inconsistent history", that "fail-fast"
+  other members of conditions such as "inconsistent history", that *fail-fast*
   more quickly than our generous default timeouts.
 
 Server-order consistency checks
@@ -88,7 +88,7 @@ Messaging ratchet for intra-subsession forward secrecy
 
   One simple scheme is to deterministically split the key into n keys, one for
   each sender. Then, each key can be used within a hash-chain ratchet for the
-  corresponding sender. Once all recipients have decrypted a packet and deleted
+  corresponding sender. Once all readers have decrypted a packet and deleted
   the key, the secrecy of messages encrypted with that key and previous ones is
   ensured, even if an attack compromises members' memory later. However, since
   this scheme does not distribute entropy between members, there is no chance
@@ -104,12 +104,12 @@ More functionality
 ------------------
 
 Large messages and file transfer
-  Our current padding scheme limits messages to roughly 2^16 bytes, to keep it
-  under our maximum XMPP server stanza size. This may be extended to arbitrary
-  sizes - pad up to the next-power-of-2-multiple of the MTU then split this
-  into MTU-sized packets. (This is just a functionality improvement; these
-  padding schemes have not been researched from an adversarial model.) After
-  this, it is a straightforward engineering task to allow file transfers.
+  Our current padding scheme limits messages to roughly 2\ :sup:`16` bytes, to
+  keep it under our XMPP server maximum stanza size. This may be extended to
+  arbitrary sizes: pad up to the next-power-of-2-multiple of the max size, then
+  split this into MTU-sized packets. (This is just a functionality improvement;
+  these padding schemes have not been researched from an adversarial model.)
+  After this, it is a straightforward engineering task to allow file transfers.
 
 Use peer-to-peer or anonymous transport for non-GKA messages
   The only part of our system that requires a linear ordering is the membership
@@ -119,20 +119,20 @@ Use peer-to-peer or anonymous transport for non-GKA messages
 Better multi-device support
   A group messaging system can already be used for multiple devices in a very
   basic way - simply have each device join the session as a separate member.
-  This is desireable from a security point of view - we avoid having to share
+  This is desireable for security reasons, since it means we can avoid sharing
   ephemeral keys. It's unclear whether devices should share identity keys, or
   use different identity keys and have the PKI layer bind them to say "we are
-  the same identity"; but this decision doesn't affect our messaging layer.
+  the same identity", but this decision doesn't affect our messaging system.
 
   Beyond this, we can add some things both in the messaging layer and in the UI
   layer to make the experience smoother for users.
 
-  - The users view should merge show one entry per user, not per device;
+  - The users view should show one entry per user, not per device;
   - Not-fully-acked warnings may be tweaked to only require one ack from every
     *user* rather than every device. However, a warning should probably fired
-    eventually even if all devices don't ack it - only later than in the single
-    device case; and it is still a critical security error if different devices
-    get *different* content. Similar logic may be applied to heartbeats;
+    eventually even if all devices don't ack it, just later than in the single
+    device case; it is still a critical security error if different devices get
+    *different* content. Similar logic may be applied to heartbeats;
   - There are extra corner cases in the browser case, where the user may open
     several tabs (each acting as a separate device), with crashes and page
     reloads causing churn that might reveal implementation bugs.
@@ -140,26 +140,27 @@ Better multi-device support
   (We are already doing some of the above.)
 
 Sync old session history across devices
-  It is unnecessary here to use security credentials (such as shared group keys
-  or session keys) that are linked to others - we already read the messages, we
-  don't need anyone else to re-read them again. Futhermore, the credentials in
-  modern messaging protocols are supposed to be ephemeral, and this is a vital
-  part of their security. This would all be undermined, if we create a sync
-  protocol that directly reuses ciphertext from our messaging protocol, since
-  it forces us to store these credentials. It is much better to re-encrypt the
-  plaintext under our own keys, unlinked to anyone else.
+  It is unnecessary here to reuse security credentials (e.g. shared group keys
+  or session keys) that are linked to others - we already decrypted the packets
+  and don't need to do this again. Futher, credentials in modern protocols are
+  supposed to be ephemeral, and this is a vital part of their security. If we
+  retain such credentials, we may put others at risk or leave forensic traces
+  of our own activities.
 
-  That is, *at the very least*, this feature must be a separate protocol; the
-  security model here is *private storage* for oneself, and *not* private
-  communications. More fundamentally, long-term storage even of encrypted data
-  directly counteracts forward secrecy, so the user must be made aware of this
-  before such a feature is enabled.
+  Therefore, our sync mechanism must not directly reuse ciphertext from our
+  messaging protocol, since it forces us to store these credentials. It is much
+  better to re-encrypt the plaintext under our own keys, unlinked to anyone
+  else. That is, *at the very least*, this feature must be a separate protocol;
+  the security model here is *private storage* for oneself, and *not* private
+  communications. Finally, even following this requirement, long-term storage
+  of encrypted data directly counteracts forward secrecy, so the user must be
+  made aware of this before such a feature is enabled.
 
 Research
 ========
 
-Here are some research topics for the future, for which we have no concrete
-suggestions for solutions, though we do have some vague directions.
+Here are some research topics for the future for which we have no concrete
+solution proposals, though we do have some vague suggestions.
 
 Several of these relate to "no-compromise" asynchronous messaging, i.e. with
 causal ordering, no breaking of symmetry between members, no requirement of
@@ -205,9 +206,9 @@ Save and load current session
 Membership change *policy* protocol
   This ought to be layered on top of a membership change *mechanism* protocol.
   When reasoning about security, naturally one considers who is allowed to do
-  what. But this is a separate issue from *how to execute membership changes*,
-  which is a hard distributed systems topic unrelated to security. We should
-  solve the latter first, assuming that everyone is allowed to do everything,
+  what. But authorization is a separate issue from *how to execute membership
+  changes*. We should solve the latter first, assuming that all members are
+  allowed to make any change (in many cases this is exactly what is desired),
   *then* think about how to construct a secure mechanism to restrict these
-  operations based on some user-defined policy. (This is the same reason why
-  one does authentication before and separately from authorization.)
+  operations based on some user-defined policy. This is the same reason why we
+  generally perform authentication before, and separately from, authorization.

@@ -11,7 +11,7 @@ Session overview
 
 A session is a local process from the point of view of *one member*. We don't
 attempt to represent a single "group" view of a session; in general such views
-are not good for *accurately* modelling security *or* distributed systems.
+are not useful for *accurately* modelling security *or* distributed systems.
 
 A session, time-wise, contains a linear sequence of *session membership change*
 operations, that (if and when completed successfully) each create subsessions
@@ -89,20 +89,22 @@ the channel with a given parent reference, and rejects other such packets. We
 also define a *chain hash* built from the sequence of accepted packets, that
 members verify the consistency of after each operation finishes.
 
-We also handle further details both in the algorithm (e.g. for new members that
-don't know "the previous operation", and to authenticate the parent references)
-as well as in the implementation (e.g. for 1-packet operations that are both
-"final" and "initial).
-
 The advantage of this *implicit* agreement is that it has zero bandwidth cost,
 generalises to *any* membership change protocol, and does not depend on the
 liveness of a particular member as it would if we had an explicit leader.
+
+There are further details and cases in both the algorithm and implementation.
+For example, we have additional logic to handle new members who don't know "the
+previous operation", and define a general method to authenticate the parent
+references. We also arrange the code carefully to behave correctly for 1-packet
+operations, where the packet acts both as an "initial" and a "final" packet in
+our definitions above.
 
 To cover the other :ref:`distributed-systems` cases, we also have a system of
 rules on how to react to various channel and session events. These work roughly
 along these principles:
 
-- Every operation's target members (i.e. new members and remaining members)
+- Every operation's target members (i.e. joining members and remaining members)
   must all be in the channel to see the first packet (otherwise it is ignored)
   and remain there for the duration of the operation (otherwise it auto-fails).
 
@@ -137,30 +139,32 @@ instead construct our ordering by following these references. If we receive a
 packet out-of-order, i.e. if we haven't yet received all of its parents, we
 simply defer processing of it until we have received them.
 
-To be precise, it is important to note that parent references are only claims.
-Their truth is susceptible to lying; the claimant may:
+References must at least be second-preimage-resistant, with the pre-image being
+some function of the *full* verified-decrypted referent message (i.e. content,
+parents, author and readers), so that all members interpret them consistently.
 
-- make false claims, i.e. refer to messages they haven't seen; hashes give some
-  protection here, but they could e.g. reuse a hash they saw from someone else;
+Our definition based on hashing packet ciphertext, together with using a shared
+group encryption key, guarantees the above property for our case. However to be
+precise, it is important to note that such references are only claims. Their
+truth is susceptible to lying; the claimant may:
+
+- make false claims, i.e. refer to messages they haven't seen; second pre-image
+  resistance gives *some* protection here, but an attacker could e.g. reuse a
+  hash value that they saw from another member;
 - make false omissions, i.e. not refer to messages that they have seen.
 
-We have rules that enforce some logical consistency here:
+We have rules that enforce some logical consistency across references:
 
 - a message's parents must form an anti-chain, i.e. none of these parents may
   directly or indirectly (via intermediate messages) reference each other;
 - an author's own messages must form a total order (line).
 
 This gives some protection against arbitrary lies, but it is still possible to
-lie within these constraints. However, we don't offer protection for this; we
-believe that there is no benefit for an attacker to make such lies, and that
-the cost of any solution would not be worth the minor extra protection.
+lie within these constraints. Nevertheless, we omit protection for the latter,
+since we believe that there is no benefit for an attacker to make such lies,
+and that the cost of any solution would not be worth the minor extra security.
 
-References must also have the property that the same reference to a packet is
-interpreted (decrypted and verified into content, parents and membership) by
-all of its members identically. Our simple hash-based definition, together with
-using a shared group encryption key, guarantees this for our case.
-
-For a more detailed exploration, including tradeoffs of the "defer processing"
+For a more detailed exploration, including tradeoffs of the *defer processing*
 approach to strong ordering, and ways to calculate references to have better
 resistance against false claims, see [msg-2o0]_.
 
@@ -174,20 +178,20 @@ implicit acknowledgement ("ack") that the author received every parent. Based
 on this, we can ensure end-to-end reliability and consistency. We take much
 inspiration from the core ideas of TCP_.
 
-We require every message (those we send, *and* those we receive) to be acked by
-all recipients; if we (as the local user) don't observe these within a timeout,
-we warn the human user. We may also occasionally resend the packets of these
-messages, possibly including others' packets that we received. Resends are all
-based on implicit signals; we have no explicit resend requests as in OldBlue.
+We require every message (those we write, *and* those we read) to be acked by
+all (other) readers; if we don't observe these within a timeout, we warn the
+user. We may occasionally resend the packets of those messages (the subjects of
+such warnings), including those authored by others. Resends are all based on
+implicit conditions; we have no explicit resend requests as in OldBlue.
 
-To ensure that we ack everything that everyone sent, we also occassionally send
-out acks automatically outside of the user's control. Due to strong ordering,
-acks are transitive (i.e. implicitly ack all of its ancestors) and thus these
-auto-acks can be delayed, to ack several messages at once and reduce volume.
+To ensure we ack everything that everyone wrote, we also occassionally send
+acks automatically outside of the user's control. Due to strong ordering, acks
+are transitive (i.e. implicitly ack all of its ancestors) and thus auto-acks
+can be delayed to "batch" ack several messages at once and reduce volume.
 
-There are more considerations, to avoid perpetual reacking-of-acks but ensure
+We develop some extra details to avoid perpetual reacking-of-acks, yet ensure
 that the final messages of a session, or of a busy period within a session, are
-actually fully-acked. This includes a formal session "shutdown" process.
+actually fully-acked. We also include a formal session "shutdown" process.
 
 For a more detailed exploration, including resend algorithms, timing concepts,
 different ack semantics, why we must have end-to-end authenticated reliability,
@@ -198,7 +202,7 @@ and the distinction between consistency and consensus, see [msg-2c0]_.
 Message encryption
 ==================
 
-Message encryption is currently very simple. Each subsession has a constant set
+For now, message encryption is very simple. Each subsession has a constant set
 of keys (the output of the group key exchange) that are used to authenticate
 and encrypt all messages in it - one encryption key shared between all members,
 and one signature key for each member, with the public part shared with others.

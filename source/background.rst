@@ -1,4 +1,3 @@
-.. include:: <isotech.txt>
 .. include:: <mmlalias.txt>
 
 ==========
@@ -8,8 +7,8 @@ Background
 This chapter is not about our work, but a general discussion of secure group
 communications - our model of what it is, and "ideal" properties that *might*
 be achieved. Often, lists of security properties may seem arbitrary, with long
-names seemingly unrelated to each other. We take a more methodical approach,
-and try to classify these properties within a general framework.
+technical names that seem unrelated to each other. We take a more methodical
+approach, and try to classify these properties within a general framework.
 
 Our project goals only focus on a subset of these. Even so, enumerating all the
 possibilities that we can think of, is useful for future reference and for
@@ -21,13 +20,12 @@ path towards a more complete and precise framework in the future.
 Model and mechanics
 ===================
 
-To start with, we present a high-level conceptual model of a *private group
-session* and introduce some terminology.
+First, we present a high-level conceptual model of a *private group session*
+and introduce some terminology. Secure communication systems generally consist
+of the following steps:
 
-Secure communication systems generally proceeds as follows:
-
-0. All members know others' identity (long-term) public keys.
-1. Session membership change, inc. establishment and optional teardown.
+0. Identity (long-term) key validation.
+1. Session membership change (e.g. establishment or optional termination).
 2. Session communication.
 
 We only concern ourselves with (1) and (2). We assume that (0), a.k.a. the "PKI
@@ -62,12 +60,13 @@ make this clear and unambiguous.
 For completeness, we observe that a real system often unintentionally generates
 "side channel" information, beyond the purpose of the model. This includes the
 time, space, energy cost of computation; the size, place of storage; the time,
-size, route of communications; and probably more that we've missed. Often but
-not always, it is not possible to avoid generating much of this information.
+size, route of communications; and probably more that we've missed. Often it is
+impossible to avoid generating some of this information.
 
-In summary, we've enumerated the types of information in our model: membership,
-ordering, content, and side channels. Next, we'll discuss and classify the
-security properties we might want, and apply them to each of these types.
+In summary, we've enumerated the broad categories of information in our model:
+membership, ordering, content, and side channels. Next, we'll discuss and
+classify the security properties we might want, then consider these properties
+in the context of each of these categories.
 
 .. [#keyv] For example, "WARNING: the authenticity and privacy of this session
     is dependant on the unknown validity of the binding $key |LeftRightArrow|
@@ -82,16 +81,13 @@ security properties we might want, and apply them to each of these types.
 Security properties
 ===================
 
-What security properties do we want? We consider this in an abstract way, then
-methodically apply our conclusions to different specific cases.
-
-In any system, we produce and consume information. This could be explicit (e.g.
-contents) or implicit (e.g. metadata). From this very general observation, we
-can suggest a few fundamental security properties:
+In any information network, we produce and consume information. This could be
+explicit (e.g. contents) or implicit (e.g. metadata). From this very general
+observation, we can suggest a few fundamental security properties:
 
 **Efficiency**.
-  *Nobody* should be able to cause anyone to spend resources (i.e. time,
-  memory, or bandwidth) much greater than what the initiator spent.
+  Nobody should be able to cause anyone to spend resources (i.e. time, memory,
+  or bandwidth) much greater than what the initiator spent.
 
 **Authenticity**
   Information should be associated with a proof, either explicit or implicit,
@@ -101,9 +97,14 @@ can suggest a few fundamental security properties:
   Only the intended consumers should be able to access and interpret the
   information.
 
-We'll deal with efficiency in more specific terms later. For now, we discuss
-how authenticity and confidentiality apply to the types of information from our
-session model.
+We'll consider authenticity and confidentiality as applied to the categories of
+information we listed above. (Efficiency is more fiddly and we'll discuss it in
+narrower terms later, applied to specific parts of our protocol system.)
+
+Here is a summary of current known best techniques for achieving each property.
+Though we don't try to achieve all of them in our protocol system, being aware
+of them allows us to avoid decisions that destroy the possibility to achieve
+them in the future.
 
 +-------------------+-------------------+-------------------+
 |                   | Authenticity      | Confidentiality   |
@@ -119,19 +120,14 @@ session model.
 | Contents          | via crypto        | via crypto        |
 +-------------------+-------------------+-------------------+
 
-The above is a summary of current best techniques for achieving each property.
-Even though we don't try to achieve all of them, being aware of them allows us
-to avoid decisions that destroy the possibility to achieve them in the future.
-We follow this up with slightly more detailed notes:
-
 Auth. of session existence
   This is achieved automatically by authenticity of any of the other types; we
   don't need to worry about it on its own.
 
 Conf. of session existence
-  This is the hardest to achieve, and is on ongoing research topic. Not only
+  This is the hardest to achieve, and is an ongoing research topic. Not only
   does it require confidentiality of all the other types of information, but
-  also trusted transport obfuscation and/or steganography. (because?)
+  also trusted transport obfuscation and/or steganography. (TODO: because?)
 
 Auth. of side channels
   We don't care about the authenticity of something we didn't intend to
@@ -142,8 +138,8 @@ Conf. of side channels
   the confidentiality of other types of information.
 
 Auth. of membership
-  There is some depth to this. The first choice is whether a distinct "change
-  session membership" operation should exist outside of sending messages. "Yes"
+  There is some depth to this. The first choice is whether a distinct *change
+  session membership* operation should exist outside of sending messages. "Yes"
   means that (e.g.) you can add someone to the session, and they will know this
   (maybe a window will pop up on their side) even if you don't send them any
   messages. "No" means that membership changes must always be associated with
@@ -209,11 +205,17 @@ Auth. of contents
 Conf. of contents
   This is a straightforward application of cryptography.
 
+In conclusion, we've taken a top-down approach to identify security properties
+that are direct high-level user concerns in a general *private group session*.
+We have not considered lower-level properties (e.g. *contributiveness*, *key
+control*) here since they are only relevant to specific implementations; but we
+will discuss such properties *when and if* they might affect the ones above.
+
 Threat models
 =============
 
 Attackers with different powers may try to break any of the above properties.
-Firstly, let's define and describe these powers:
+First, let's define and describe these powers:
 
 Active communications attack (on the entire transport)
   This is the standard attack that all modern communications systems should
@@ -250,11 +252,12 @@ Corrupt member (of some targets)
   attacker can observe secret computations that don't touch memory, e.g.
   collecting, using, then immediately discarding entropy.
 
-Now, we'll try to enumerate all the concrete things an attacker *might* be able
-to do, by applying our abstract properties to our model of session mechanics.
-The term "target" refers to the direct target of a secrets-leak or corruption,
-and "current" is relative to when those attacks happen. This is simplified for
-the time being; we don't directly consider multiple attacks.
+Now, we enumerate all the concrete things an attacker *might* be able to do, by
+applying these attacks to our model of session mechanics. For simplicity, we
+only consider individual attacks; a full precise formal treatment will need to
+consider multiple attacks across multiple sessions. In the following, the term
+"target" refers to the direct target of a secrets-leak or corruption, and the
+term "current" refers to when that attack happens.
 
 Older sessions (i.e. already-closed)
   - read session events (i.e. decrypt/verify messages and membership changes);
@@ -344,12 +347,14 @@ at least unable to pass this certainty-in-belief onto third parties.
     can still just compromise a second member to get the missing pieces.
 
 .. [#fwds] The inability for an attacker to decrypt past messages is commonly
-    known as (various types of, depending on the attack) "forward secrecy".
+    known as *forward secrecy*. Currently are several slightly different formal
+    models for this, but the general idea is the same.
 
-.. [#kcis] This attack is commonly known as "key compromise impersonation".
+.. [#kcis] This attack is commonly known as *key compromise impersonation*.
+    As with forward secrecy, there are slightly different models for this.
 
 .. [#rene] For example, the protocol may offer the ability for members to check
     out-of-band, after establishment, that shared session secrets match up as
-    expected, and if so be convinced that the session has full security (i.e.
-    distinguish it from the first point), independently of whether identity
-    secrets were compromised before.
+    expected, and if so then be convinced that the session has full security
+    (i.e. session establishment was not tampered with) *even if members know*
+    that identity secrets were already compromised before establishment.
