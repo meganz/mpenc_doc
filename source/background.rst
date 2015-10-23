@@ -6,23 +6,29 @@ Background
 
 This chapter is not about our work, but a general discussion of secure group
 communications - our model of what it is, and "ideal" properties that *might*
-be achieved. Often, lists of security properties may seem arbitrary, with long
-technical names that seem unrelated to each other. We take a more methodical
-approach, and try to classify these properties within a general framework.
+be achieved. It is the longest chapter, so readers already familiar with such
+topics may prefer to skip to the next one.
 
-Our project goals only focus on a subset of these. Even so, enumerating all the
-possibilities that we can think of, is useful for future reference and for
-comparison with other projects that focus on a different subset. It gives us
-some level of confidence that we haven't missed anything, provides a better
-understanding of the relationships between various properties, and suggests a
-path towards a more complete and precise framework in the future.
+Often, lists of security properties can seem arbitrary, with technical names
+that seem unrelated to each other. We take a more methodical approach, and try
+to classify these properties within a general framework. To be clear, this is
+neither formal nor precise, and our own project goals only focus on a subset of
+these. Our motivation is to *enumerate* all options from a *protocol design*
+perspective, for future reference and for comparison with other projects that
+focus on a different subset. It offers some assurance that we haven't missed
+anything, provides better understanding of relationships between properties,
+and suggests natural separations for solving different concerns.
+
+There is other work, previous and ongoing, that gives more precise treatments
+of the topics below. We encourage interested readers to explore those for
+themselves, as well as future research on classification and enumeration.
 
 Model and mechanics
 ===================
 
-First, we present a high-level conceptual model of a *private group session*
-and introduce some terminology. Secure communication systems generally consist
-of the following steps:
+First, we present an abstract conceptual model of a *private group session* and
+introduce some terminology. Secure communication systems generally consist of
+the following steps:
 
 0. Identity (long-term) key validation.
 1. Session membership change (e.g. establishment or optional termination).
@@ -74,9 +80,9 @@ in the context of each of these categories.
 
 .. [#rejn] We don't yet have a good model of what it should precisely mean to
     *rejoin* a session. This "happens to work" with what we've implemented, but
-    is not easily extensible to asynchronous modes. Specifically, it's unclear
-    how best to consistently define the relative ordering of messages. We will
-    revisit this topic in future and explore it in more depth.
+    is not easily extensible to asynchronous messaging. Specifically, it's
+    unclear how best to consistently define the relative ordering of messages.
+    We will revisit this topic in future and explore it in more depth.
 
 Security properties
 ===================
@@ -125,9 +131,11 @@ Auth. of session existence
   don't need to worry about it on its own.
 
 Conf. of session existence
-  This is the hardest to achieve, and is an ongoing research topic. Not only
-  does it require confidentiality of all the other types of information, but
-  also trusted transport obfuscation and/or steganography. (TODO: because?)
+  This is the hardest to achieve, and is an ongoing research topic. This is the
+  scenario where the user must hide the fact that they are merely *using the
+  protocol*, even if the attacker knows nothing about any actual sessions. Not
+  only does it require confidentiality of all the other types of information,
+  but also obfuscation, steganography, and/or anti-forensics techniques.
 
 Auth. of side channels
   We don't care about the authenticity of something we didn't intend to
@@ -144,7 +152,7 @@ Auth. of membership
   (maybe a window will pop up on their side) even if you don't send them any
   messages. "No" means that membership changes must always be associated with
   an actual message that effects this change. This is up to the application;
-  though "no" is generally more suited for asynchronous scenarios.
+  though "no" is generally more suited for asynchronous messaging.
 
   If "yes", we must consider *entity aliveness* in our membership protocol.
   This is the property that *if* we complete the protocol successfully, *then*
@@ -235,17 +243,19 @@ Leak session secrets (of some targets)
   participating in a session they're already part of. This may be secret to
   only the subject, or shared across all members, or a combination of both.
 
-  Depending on the protocol, this may *include* identity secrets if they must
-  be used to generate/process messages or membership changes. Better protocols
-  would *not* need this, so that these may be wiped from memory during a
-  session, reducing the attack surface.
+  This may *include* identity secrets if they must be used to generate/process
+  messages or membership changes. Better protocols would *not* need them, so
+  that they may be wiped from memory during a session, reducing the attack
+  surface. However, even in the latter case, session secrets still contain
+  *entropy* from identity secrets; weaker threat models that exclude this are
+  better for modelling attacks on the RNG than on memory; see [11SSEK]_.
 
 Corrupt member (of some targets)
   This may be either a genuine but malicious member, or a external attacker
   that has exploited the running system of a genuine member. Unfortunately, it
   is probably impossible to distinguish the two cases.
 
-  We include this because it's commonly mentioned, but it's unclear whether
+  We include this for completeness as "the worst case", though it's unclear if
   this is fundamentally different from many repeated applications of "leak
   session secrets"; more research is needed here. One difference could be that
   under the corruption attack, there is no parallel honest instance *and* the

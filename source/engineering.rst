@@ -2,8 +2,8 @@
 Engineering
 ===========
 
-In this chapter we describe the high-level architecture of the reference
-implementation of our protocol system, and its core engineering concepts.
+In this chapter we describe the reference implementation of our protocol
+system, its architecture and core engineering concepts.
 
 For a distributed system, the only *requirement* for it to work is that the
 protocol is well-defined. However, protocols that support advanced features or
@@ -60,8 +60,8 @@ different from insecure transport protocols, and we see this already by the
 difference between session and channel membership. Hopefully whoever does this
 work will architect their future software with greater foresight.
 
-The remainder of this document contains a description of our implementation;
-but knowledge beyond this point is not necessary merely to *use* our system.
+The remainder of this document details the internals of our implementation; but
+knowledge beyond this point is not necessary merely to *use* our system.
 
 .. [#sess] We do not define a lower (transport) interface in Session because
     implementations or subtypes may require a *particular* transport; we leave

@@ -194,8 +194,9 @@ that the final messages of a session, or of a busy period within a session, are
 actually fully-acked. We also include a formal session "shutdown" process.
 
 For a more detailed exploration, including resend algorithms, timing concepts,
-different ack semantics, why we must have end-to-end authenticated reliability,
-and the distinction between consistency and consensus, see [msg-2c0]_.
+different ack semantics, why we must have end-to-end authenticated reliability
+instead of "just using TCP", the distinction between consistency and consensus,
+and more, see [msg-2c0]_.
 
 .. _TCP: https://en.wikipedia.org/wiki/Transmission_Control_Protocol
 

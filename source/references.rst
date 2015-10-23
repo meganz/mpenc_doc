@@ -62,6 +62,14 @@ References
   | Proceedings of the 16th ACM conference on Computer and Communications Security (CCS) 2009.
   | http://www.cypherpunks.ca/~iang/pubs/mpotr.pdf
 
+.. [11SSEK]
+  | C. J. F. Cremers.
+    *Session-state Reveal is stronger than eCK's Ephemeral Key Reveal: Using
+    automatic analysis to attack the NAXOS protocol*.
+  | Unpublished amendment by original author.
+  | First appeared in: International Journal of Applied Cryptography (IJACT), 2010.
+  | https://www.cs.ox.ac.uk/people/cas.cremers/downloads/papers/Cr2010-naxos_automatic.pdf
+
 .. [12SDGK]
   | K. Neupane, R. Steinwandt, and A. S. Corona.
     *Scalable Deniable Group Key Establishment*

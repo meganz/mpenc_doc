@@ -2,8 +2,8 @@
 Topics
 ======
 
-This chapter describes the goals for our messaging protocol, the constraints we
-chose, and a discussion of the issues that occur under these contexts.
+This chapter states the goals for our messaging protocol, the constraints we
+chose, and discusses the issues that occur under these contexts.
 
 Security goals
 ==============
@@ -100,9 +100,8 @@ a very bad user experience that may push them towards less secure applications.
 
 Generally in a distributed system, events may happen concurrently, so ideally a
 causal order (directed acyclic graph) rather than a total order (line) should
-be used to represent the ordering of events. We do this for messages, so this
-component of our system may be re-used in asynchronous systems, without major
-redesign.
+be used to represent the ordering of events. We do this for messages, and this
+component of our system may be directly re-used for asynchronous messaging.
 
 However, group key agreements (which is how we implement membership changes)
 historically have not been developed with this consideration in mind. An ideal
