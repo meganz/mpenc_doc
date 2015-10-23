@@ -1,6 +1,8 @@
-==========
-References
-==========
+.. only:: not latex
+
+    ==========
+    References
+    ==========
 
 .. [OTR-spec]
   | Off-the-Record Messaging Protocol version 3.

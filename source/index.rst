@@ -1,3 +1,4 @@
+========================================
 Multi-Party Encrypted Messaging Protocol
 ========================================
 
@@ -54,10 +55,3 @@ both for the immediate short term as well as long-term research objectives.
    crypto
    future-work
    references
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
