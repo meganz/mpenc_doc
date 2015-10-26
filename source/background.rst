@@ -5,7 +5,7 @@ Background
 ==========
 
 This chapter is not about our work, but a general discussion of secure group
-communications - our model of what it is, and "ideal" properties that *might*
+communications -- our model of what it is, and "ideal" properties that *might*
 be achieved. It is the longest chapter, so readers already familiar with such
 topics may prefer to skip to the next one.
 
@@ -51,7 +51,7 @@ the session boundary, i.e. when the subject decides to join and part.
 
 Whilst part of a session, members may change the session membership, send new
 messages to the current session membership, and receive these events from each
-other. Events are only visible to those who are part of the session membership
+other. Events are only readable to those who are part of the session membership
 of the event generator, when they generated it. For example, joining members
 cannot read messages that were written before the author saw them join (unless
 an old member leaks the contents to them, outside of the protocol). [#rejn]_
@@ -81,8 +81,8 @@ in the context of each of these categories.
 .. [#rejn] We don't yet have a good model of what it should precisely mean to
     *rejoin* a session. This "happens to work" with what we've implemented, but
     is not easily extensible to asynchronous messaging. Specifically, it's
-    unclear how best to consistently define the relative ordering of messages.
-    We will revisit this topic in future and explore it in more depth.
+    unclear how best to consistently define the relative ordering of messages
+    across all members. We will explore this topic in more depth in the future.
 
 Security properties
 ===================
@@ -91,7 +91,7 @@ In any information network, we produce and consume information. This could be
 explicit (e.g. contents) or implicit (e.g. metadata). From this very general
 observation, we can suggest a few fundamental security properties:
 
-**Efficiency**.
+**Efficiency**
   Nobody should be able to cause anyone to spend resources (i.e. time, memory,
   or bandwidth) much greater than what the initiator spent.
 
@@ -227,11 +227,14 @@ First, let's define and describe these powers:
 
 Active communications attack (on the entire transport)
   This is the standard attack that all modern communications systems should
-  protect against - i.e. a transport-level "man in the middle" that can inject,
+  protect against -- i.e. a transport-level "man in the middle" who can inject,
   drop, replay and reorder packets. Generally (and in practise mostly) channels
-  are bi-directional - so we must assume that the attacker, if they are able to
-  target one member, then they are able to target all members, by attacking the
-  channel in the opposite direction.
+  are bi-directional -- so we must assume that the attacker, if they are able
+  to target one member, then they are able to target all members, by attacking
+  the channel in the opposite direction.
+
+  Since this a baseline requirement, the powers defined below should be taken
+  to *include* the ability to actively attack the transport during any attack.
 
 Leak identity secrets (of some targets)
   This refers to all of the secret material needed for a subject to establish a
@@ -279,7 +282,7 @@ Current sessions (i.e. opened, not-yet-closed)
   - participate as targets (i.e. auth/encrypt messages and initiate/confirm
     membership changes; this includes making false claims or omissions in the
     *contents* of messages, such as receipt acknowledgements, which may break
-    other properties like auth. of ordering, auth. of message membership, or
+    other properties like authenticity of ordering or message membership, or
     invariants on the application layer);
   - participate as non-targets (e.g. against the targets); [#kcis]_
   - (these may apply differently to newer or older parts of the session).
@@ -289,7 +292,7 @@ Newer sessions (i.e. not-yet-opened)
   - open/join sessions (etc.) as non-targets (e.g. invite a target or intercept
     or respond to their invitations), read and participate in them; [#kcis]_
   - read session events, participate as targets, or as non-targets, in sessions
-    whose establishment was not compromised (as in previous points). [#rene]_
+    whose establishment was not compromised as in the previous points. [#rene]_
 
 Next, we'll discuss the unavoidable consequences of attacks using these powers,
 and from this try to get an intuitive idea on the best thing we *might* be able
@@ -298,29 +301,29 @@ to defend against:
 Active attack
   Present cryptographic systems have security theorems that state that, when
   implemented correctly and assuming the hardness of certain mathematical
-  problems, an attacker at this level is unable to break the conf. and auth. of
-  message contents, or the auth. of membership - and therefore also anything
-  that derives their security from these mechanisms.
+  problems, an attacker at this level cannot break the confidentiality and
+  authenticity of message contents, or the authenticity of membership -- and
+  therefore also anything that derives their security from these properties.
 
-  However, side channel attacks against the conf. of membership are feasible;
-  hiding this sufficiently well (and even defining models for all of the side
-  channels) is still a research problem, and it is not known what the maximum
-  possible protection is.
+  However, side channel attacks against the confidentiality of membership are
+  feasible; hiding this sufficiently well (and even defining models for all of
+  the side channels) is still a research problem, and it is not known what the
+  maximum possible protection is.
 
-Leak identity secrets (+ active):
+Leak identity secrets (and active attack)
   By definition, the attacker may open/join sessions *as targets*, then read
   their events and participate in them. However, we may be able to prevent them
   from doing anything else.
 
-Leak session secrets (+ active):
+Leak session secrets (and active attack)
   By definition, the attacker may participate *as targets* in current sessions,
-  and read its events, for at least several messages into the future - until
+  and read its events, for at least several messages into the future -- until
   members mix in new entropy secret to the attacker. If session secrets also
   include identity secrets, the attacker also gains the abilities mentioned in
   the previous point. However, we may be able to prevent them from doing
   anything else.
 
-Corrupt insider (+active):
+Corrupt insider (and active attack)
   This is similar to the above, except that there is no chance of recovery by
   members mixing in entropy, until after the corruption is healed.
 
@@ -334,7 +337,7 @@ session model. But we *could* try to protect a related property:
   information even without being able to verify it.)
 
 For every type of information where we want authenticity *and* confidentiality,
-we should also aim for confidential authenticity - if the attacker should be
+we should also aim for confidential authenticity -- if the attacker should be
 unable to read its contents, they should also be unable to verify *anything*
 about it. As noted earlier, this is useful not merely for its own sake, but is
 essential if we want to protect the confidentiality of membership. Furthermore,

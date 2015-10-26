@@ -17,19 +17,19 @@ Packet overview
 Every packet in our protocol is a sequence of records, similar to HTTP headers.
 Each record has a type and a value, and some records may appear multiple times.
 
-There are two packet types - (a) packets part of a membership change operation,
-that we sometimes also call "greeting packet" or "greeting message"; and (b)
+There are two packet types: (a) packets part of a membership change operation,
+that we sometimes also call *greeting packets* or *greeting messages*; and (b)
 packets that represent a logical message written by members of the session.
 
 Both packet types include the following common records, that occur either at
 or near the start of the sequence, in order:
 
-- ``MESSAGE_SIGNATURE`` - This is a cryptographic signature for the rest of the
-  packet. This is calculated differently for greeting and data packets, defined
-  in the respective sections below.
-- ``PROTOCOL_VERSION`` - This indicates the protocol version being used, as a
+- ``MESSAGE_SIGNATURE`` -- This is a cryptographic signature for the rest of
+  the packet. This is calculated differently for greeting and data packets,
+  defined in the respective sections below.
+- ``PROTOCOL_VERSION`` -- This indicates the protocol version being used, as a
   16-bit unsigned integer. Our current version is ``0x01``.
-- ``MESSAGE_TYPE`` - Indicates the packet type, ``GREETING`` or ``DATA``.
+- ``MESSAGE_TYPE`` -- Indicates the packet type, ``GREETING`` or ``DATA``.
 
 Membership changes
 ==================
@@ -42,9 +42,9 @@ simple approach using elementary cryptography only, which should be easier to
 understand and review. It will be improved later, but for now is adequate for
 our stated security goals, and was quick to implement.
 
-The subprotocols are described in their own chapters; please read them first.
-We introduce some terminology there, that is needed to understand the rest of
-this document.
+The subprotocols are described in the following chapters; please read these
+first. We introduce some terminology there, that is needed to understand the
+rest of this document.
 
 .. toctree::
    :maxdepth: 2
@@ -79,45 +79,46 @@ Protocol downflow
   recipients in the group. It is used to "distribute" information contributed
   by all participants (or derived therefrom) to all participants at once.
 
-  Every downflow message includes the records marked [3] from the summary
-  below. The first downflow message also includes records marked [1], which
+  Every downflow message includes the records marked [c] from the summary
+  below. The first downflow message also includes records marked [a], which
   contains information from everyone, collected during the upflow. If the
   operation has no upflow (e.g. exclude and refresh), the first downflow
-  message also includes records marked [2].
+  message also includes records marked [b].
 
 A greeting packet contains the following records, in order:
 
-* ``MESSAGE_SIGNATURE``, ``PROTOCOL_VERSION``, ``MESSAGE_TYPE``
-* ``GREET_TYPE`` What operation the packet is part of, as well as which stage
-  of that operation the packet belongs to. [#gtyp]_
-* ``SOURCE`` User ID of the packet originator.
-* ``DEST`` (optional) User ID of the packet destination; if omitted, it means
-  this is a broadcast (i.e. downflow) packet.
-* ``MEMBER`` (multiple) Participating member user IDs. This record appears *n*
-  times, one for each member participating in this operation, or in other words
-  the set of members in the subsession that would be created on its success.
-  This also defines the orders of participants in the upflow sequence.
-* [1] ``INT_KEY`` (multiple) Intermediate DH values for the GKA.
-* [1] ``NONCE`` (multiple) Nonces of each member for the ASKE.
-* [1] ``PUB_KEY`` (multiple) Ephemeral public session signing key of a member.
-* [2] ``PREV_PF`` Packet ID of the final packet of the previously completed
+* ``MESSAGE_SIGNATURE``, ``PROTOCOL_VERSION``, ``MESSAGE_TYPE`` -- as above.
+* ``GREET_TYPE`` -- What operation the packet is part of, as well as which
+  stage of that operation the packet belongs to. [#gtyp]_
+* ``SOURCE`` -- User ID of the packet originator.
+* ``DEST`` (optional) -- User ID of the packet destination; if omitted, it
+  means this is a broadcast (i.e. downflow) packet.
+* ``MEMBER`` (multiple) -- Participating member user IDs. This record appears
+  *n* times, once for each member participating in this operation, i.e. the set
+  of members in the subsession that would be created on its success. This also
+  defines the orders of participants in the upflow sequence.
+* [a] ``INT_KEY`` (multiple) -- Intermediate DH values for the GKA.
+* [a] ``NONCE`` (multiple) -- Nonces of each member for the ASKE.
+* [a] ``PUB_KEY`` (multiple) -- Ephemeral session public signing keys of each
+  member.
+* [b] ``PREV_PF`` -- Packet ID of the final packet of the previously completed
   operation, or a random string if this is the first operation.
-* [2] ``CHAIN_HASH`` Chain hash corresponding to that packet, as calculated by
-  the initiator of this operation. This allows joining members to calculate
+* [b] ``CHAIN_HASH`` -- Chain hash corresponding to that packet, as calculated
+  by the initiator of this operation. This allows joining members to calculate
   subsequent hashes of their own, to compare with others for consistency.
-* [2] ``LATEST_PM`` (multiple) References to the latest (logical, i.e. data)
+* [b] ``LATEST_PM`` (multiple) -- References to the latest (logical, i.e. data)
   messages from the previous subsession that the initiator of this operation
   had seen, from when they initiated the operation.
-* [3] ``SESSION_SIGNATURE``: Authenticated :ref:`confirmation signature
+* [c] ``SESSION_SIGNATURE`` -- Authenticated :ref:`confirmation signature
   <aske-session-sig>` for the ASKE, signed with the long-term identity key of
   the packet author.
 
-1. Only for upflow messages and the first downflow message. During the upflow,
+a. Only for upflow messages and the first downflow message. During the upflow,
    this gets filled to a maximum of *n* occurences.
-2. Only for the initial packet of any operation. These fields are ignored by
+b. Only for the initial packet of any operation. These fields are ignored by
    the greeting protocol; instead they are used by the concurrency resolver.
    See :ref:`transport-integration` and [msa-5h0]_ for details.
-3. Only for downflow messages, to confirm the ASKE keys.
+c. Only for downflow messages, to confirm the ASKE keys.
 
 ``MESSAGE_SIGNATURE`` is made by the ephemeral signing key and signs the byte
 sequence ``$magic_number || all_subsequent_records``. ``$magic_number`` is a
@@ -130,7 +131,7 @@ It is important not to allow ongoing operations to affect anything else in the
 overall session, until this authentication has taken place; our atomic design
 satisfies this security requirement.
 
-Likewise, members may mess with the structure of packets as the operation runs,
+Likewise, members may corrupt the structure of packets as the operation runs,
 such as re-ordering the ``MEMBER`` list of records. However, there should be no
 security risk; inconsistent results will be detected via ``SESSION_SIGNATURE``
 and cause a failure of the overall operation.
@@ -151,22 +152,22 @@ authentically (using the ephemeral signing key).
 
 A data packet contains the following records, in order:
 
-* ``SIDKEY_HINT`` A one byte hint, that securely gives the recipient an aid in
-  efficiently selecting the decryption key for this message.
-* ``MESSAGE_SIGNATURE``, ``PROTOCOL_VERSION``, ``MESSAGE_TYPE``
-* ``MESSAGE_IV`` Initialisation vector for the symmetric block cipher. The
+* ``SIDKEY_HINT`` -- A one byte hint, that securely gives the recipient an aid
+  in efficiently selecting the decryption key for this message.
+* ``MESSAGE_SIGNATURE``, ``PROTOCOL_VERSION``, ``MESSAGE_TYPE`` -- as above.
+* ``MESSAGE_IV`` -- Initialisation vector for the symmetric block cipher. The
   cipher we choose is malleable, to give better deniability when we publish
   ephemeral signature keys, similar to OTR [OTR-spec]_.
-* ``MESSAGE_PAYLOAD``. Ciphertext payload. The plaintext is itself a sequence
+* ``MESSAGE_PAYLOAD`` -- Ciphertext payload. The plaintext is itself a sequence
   of records, as follows:
 
-  * ``MESSAGE_PARENT`` (multiple) References to the latest (logical, i.e. data)
-    messages that the author had seen, when they wrote the message.
-  * ``MESSAGE_BODY`` UTF-8 encoded payload, the message content as written by
-    the human author.
+  * ``MESSAGE_PARENT`` (multiple) -- References to the latest (logical, i.e.
+    data) messages that the author had seen, when they wrote the message.
+  * ``MESSAGE_BODY`` -- UTF-8 encoded payload, the message content as written
+    by the human author.
 
 ``MESSAGE_SIGNATURE`` is made by the ephemeral signing key and signs the byte
-sequence ``$magic_number || H( sid || group_key ) || all_subsequent_records``.
+sequence ``$magic_number || H(sid || group_key) || all_subsequent_records``.
 ``$magic_number`` is a fixed string to prevent the signature being injected
 elsewhere; for data packets in this protocol version, it is the byte sequence
 ``datamsgsig``. Since a single ephemeral signing key may be used across several
@@ -191,7 +192,7 @@ scheme is as follows:
 **Trial decryption**. In general, at some points in time, it may be possible to
 receive a message from several different sessions. The ``SIDKEY_HINT`` record
 helps to efficiently determine the correct decryption key. We calculate it as
-``H( sid || group_key )[0]``. ``sid`` is the session ID (of the subsession) as
+``H(sid || group_key)[0]``. ``sid`` is the session ID (of the subsession) as
 determined from the ASKE, and ``group_key`` is its encryption key.
 
 Only the first byte of the hash value is used, so it is theoretically possible
@@ -206,7 +207,7 @@ to select between the multiple decryption keys or multiple authentication keys
 (respectively) that are available to verify-decrypt packets.
 
 .. [#psig] When/if we come to publish ephemeral signature keys, we will also
-    have to publish all ``H( sid || group_key )`` values that were used by the
+    have to publish all ``H(sid || group_key)`` values that were used by the
     key, to ensure that a forger can generate valid packets without knowing the
     group encryption keys.
 

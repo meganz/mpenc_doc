@@ -112,7 +112,7 @@ and nonces using a hash function :math:`H`:
 .. math::
    \mathsf{sid} = H(\mathsf{pid}_1||\mathsf{pid}_2||\ldots||\mathsf{pid}_n||k_1||k_2||\ldots||k_n)
 
-The IDs and nonces must be strictly ordered.  For mpENC for the Mega platform
+The IDs and nonces must be strictly ordered.  For mpENC on the Mega platform
 the participant IDs are the full XMPP JIDs, and sorting is performed in lexical
 order.  The nonces are ordered so as to correspond to their participant IDs.
 
@@ -189,7 +189,7 @@ participants have been successfully verified against the local session ID and
 each participant's static identity signature key.
 
 Following successful completion, *only* the ephemeral keys are needed for
-message authentication - signing with the static keys would effectively
+message authentication -- signing with the static keys would effectively
 inhibit any plausible deniability.  However the static keys are needed for
 further changes to the session membership.
 
@@ -285,12 +285,12 @@ Confirmation of the Shared Group Key
 
 The ASKE mentioned above only protects the GKA against external attackers.  A
 malicious insider can cause different participants to generate different shared
-group keys.  We *could* protect against this by adding the shared group key
-:math:`x_0 \dots x_nG` (or better, something derived from it) to the definition
+group keys.  We *could* protect against this by adding the shared group secret
+:math:`x_1 \dots x_nG` (or better, something derived from it) to the definition
 of :math:`m_i`. However, we currently omit this, for the following reasons:
 
-- This would cause a "key refresh" step to require everyone's acknowledgement,
-  adding an extra round to it.
+- This would cause a key refresh to require everyone's acknowledgement, adding
+  an extra round to it.
 
 - This attack does no more damage beyond "drop all messages", which is already
   available to active transport attackers:

@@ -21,8 +21,8 @@ in more detail in subsequent chapters.
 We achieve authenticity and confidentiality of message content, by using modern
 standard cryptographic primitives with ephemeral session keys. The security of
 these keys, and the authenticity of session membership and boundary ordering
-(freshness), are achieved through a group key agreement and authentication
-protocol. At present we use our own protocol, but this could be replaced.
+(freshness), are achieved via an authenticated group key agreement protocol. We
+do *not* use timestamps.
 
 The authenticity of message ordering is achieved through the authenticity of
 message content, together with some rules that enforce logical consistency.
@@ -35,7 +35,7 @@ that ensure liveness using timeout warnings and continual retries. This differs
 from previous approaches [09MPOM]_ [13GOTR]_ which achieve those via a separate
 cryptographic mechanism. We believe that our approach is a cleaner separation
 of concerns, requiring *no extra cryptography* beyond author authentication and
-reusing basic concepts from time-tested reliability protocols such as TCP.
+re-using basic concepts from time-tested reliability protocols such as TCP.
 
 Our choice of mechanisms are intended to retain all these properties when under
 an active attack on the communication transport. Under stronger attacks, we
@@ -51,8 +51,10 @@ Under identity secrets leak against some targets (and active attack):
       system membership changes require identity secrets to execute.
 
   Newer sessions (a):
-    - [x] Attacker can open/join sessions as targets, read and participate;
-    - Attacker *cannot* open/join sessions as non-targets, read or participate;
+    - [x] Attacker can open/join sessions as the targets of the leak, and read
+      and participate those sessions;
+    - Attacker *cannot* open/join sessions as non-targets (those unaffected by
+      the leak), not even with the compromised targets;
     - Retain all relevant security properties, for sessions whose establishment
       was not actively compromised.
 
@@ -101,9 +103,9 @@ a very bad user experience that may push them towards less secure applications.
 Generally in a distributed system, events may happen concurrently, so ideally a
 causal order (directed acyclic graph) rather than a total order (line) should
 be used to represent the ordering of events. We do this for messages, and this
-component of our system may be directly re-used for asynchronous messaging.
+component of our system may be directly reused for asynchronous messaging.
 
-However, group key agreements (which is how we implement membership changes)
+However, group key agreements (GKAs), which is our membership change mechanism,
 historically have not been developed with this consideration in mind. An ideal
 solution would define how to merge the results of two concurrent operations, or
 even how to merge the operations themselves. But we could not find literature
@@ -126,7 +128,7 @@ internal state consistency of a naive implementation:
 
 - Two members start different operations concurrently (as mentioned above);
 - Two members try to complete an operation concurrently, in different ways;
-  e.g. "send the final packet" vs "send a request to abort";
+  e.g. "send the final packet" vs. "send a request to abort";
 - A user enters the channel during an operation;
 - A user leaves the channel during an operation;
 - A member starts an operation and sends the first packet to the other channel
@@ -138,7 +140,7 @@ internal state consistency of a naive implementation:
   or of others' sessions;
 - Any of the above things could happen at the same time.
 
-We must design graceful low-failure-rate solutions for all of them. Individual
+We must design graceful, low-failure-rate solutions for all of them. Individual
 solutions to each of these are fairly straightforward, but making sure that
 these interact with each other in a sane way is more complex. Then, there is
 the task of describing the intended behaviour *precisely*. Only when we have a
@@ -160,10 +162,9 @@ users. Displaying inaccurate or vague information is a security risk *even
 without an attacker* because it can lead the user to believe incorrect things.
 
 Here, we give an overview of these issues and our suggested solutions for them.
-Due to time constraints, we have not yet implemented these; but none of the
-options seem hard to construct, or complex for user experience. Avoiding any of
-these topics is always an option, which case the application will look like
-*and be as insecure as*, existing applications that do the same.
+Avoiding any of these topics is always an option, which case the application
+will look like -- *and be as insecure as* -- existing applications that do the
+same.
 
 Real parents of a message
   Some messages may not be displayed immediately below the one(s) that they are
@@ -171,8 +172,8 @@ Real parents of a message
 
   Our suggestion: (a) allow the user to select a message (e.g. via mouse click,
   long press or keyboard) upon which all non-ancestors are grayed out; and (b)
-  annotate the messages whose parents are not equal to the set { the preceding
-  message in the UI }, as a hint for the user to perform the selection.
+  annotate the messages whose parents are not equal to the set {the preceding
+  message in the UI}, as a hint for the user to perform the selection.
 
 Messages sent before a membership change completes, but received afterwards
   Obviously, this message has a different membership from the current session,
@@ -181,8 +182,8 @@ Messages sent before a membership change completes, but received afterwards
   Our suggestion: (a) when an operation completes, issue a UI notice about it
   inline in the messages view; (b) allow the user to select a message to see
   its membership, instead of trying to infer it from the session membership and
-  any "change" notices; and (c) annotate such messages as a hint for the user
-  to perform the selection.
+  any member change notices; and (c) annotate such messages as a hint for the
+  user to perform the selection.
 
 Progress and result of a membership change operation
   If the user starts an operation then immediately sends a message, this is

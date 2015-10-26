@@ -9,7 +9,7 @@
   | https://otr.cypherpunks.ca/Protocol-v3-4.0.0.html 2013-09-28
 
 .. [np1sec]
-  | (n+1)sec - a secure multi-party communication protocol.
+  | (n+1)sec, a secure multi-party communication protocol.
   | Work in progress.
   | https://learn.equalit.ie/wiki/Np1sec
 
@@ -31,7 +31,7 @@
   | J. Katz, M. Yung.
     *Scalable Protocols for Authenticated Group Key Exchange*
   | Journal of Cryptology 20(1): 85-113, 2007.
-  | First appeared in: Advances in Cryptology - Crypto 2003, LNCS vol. 2729.
+  | First appeared in: Advances in Cryptology -- Crypto 2003, LNCS vol. 2729.
   | https://www.cs.umd.edu/~jkatz/papers/multi-auth-full.pdf
 
 .. [04OTRC]
@@ -49,7 +49,7 @@
 .. [06DGKA]
   | J.-M. Bohli and R. Steinwandt.
     *Deniable Group Key Agreement*.
-  | Progress in Cryptology - VIETCRYPT 2006: 298-311
+  | Progress in Cryptology -- VIETCRYPT 2006: 298-311
   | http://bib.tiera.ru/b/75355
 
 .. [08MCIC]

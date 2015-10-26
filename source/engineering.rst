@@ -21,12 +21,12 @@ We begin by observing that any implementation of any communications system must
 define the following interfaces for these purposes:
 
 Session (interface)
-  This represents a group messaging session that follows model in the previous
-  chapter. It defines an interface for higher layers (e.g. the UI) to interact
-  with, which consists of (a) one input method to send a message or change the
-  session membership; (b) one output mechanism for the user to receive session
-  events or security warnings; and (c) various query methods, such as to get
-  its current membership, the stream of messages accepted so far, etc. [#sess]_
+  This models a group messaging session as described in :doc:`background`. It
+  defines an interface for higher layers (e.g. the UI) to interact with, which
+  consists of (a) one input method to send a message or change the session
+  membership; (b) one output mechanism for the user to receive session events
+  or security warnings; and (c) various query methods, such as to get its
+  current membership, the stream of messages accepted so far, etc. [#sess]_
 
 GroupChannel (interface) [$]
   This represents a group transport channel. It defines an interface for higher
@@ -38,10 +38,10 @@ GroupChannel (interface) [$]
   events to all members in the same order, but members must verify this.
 
 | [$] This component is specific to instant or synchronous messaging; ones
-  *not* marked with this may be re-used in an asynchronous messaging system.
+  *not* marked with this may be reused in an asynchronous messaging system.
 
 Session represents a logical view from the point of view of one user; there is
-no distinction between "not in the session" vs "in the session, and we are the
+no distinction between "not in the session" vs. "in the session, and we are the
 only member". By contrast, GroupChannel is our view of an external entity (the
 channel), and the corresponding concepts for channel membership *are* distinct.
 
@@ -112,8 +112,8 @@ The receive handler roughly runs as follows. For each incoming channel event:
 
 The components that deal directly with cryptography are marked [*] above. These
 may be improved independently from the others, and from HybridSession. We may
-also replace the cryptographic primitives within each component - e.g. DH key
-exchange, signature schemes, hash functions and symmetric ciphers - as
+also replace the cryptographic primitives within each component -- e.g. DH key
+exchange, signature schemes, hash functions and symmetric ciphers -- as
 necessary, based on the recommendations of the cryptography community.
 
 For more technical details, see our API documentation [mpenc-api]_.
@@ -363,14 +363,14 @@ with the associated ``GroupChannel``.
 
 We define ``S`` for ``Subscribe[T, S]`` as ``Boolean`` in these interfaces for
 simplicity, meaning "the item was {accepted, rejected} by the consumer". This
-allows us to detect errors - such as transport failures in sending messages, or
-trial decryption failures in receiving packets - but in a loosely-coupled way
-that discourages violation of the separation of layers. One reasonable
+allows us to detect errors -- such as transport failures in sending messages,
+or trial decryption failures in receiving packets -- but in a loosely-coupled
+way that discourages violation of the separation of layers. One reasonable
 extension is to use a 3-value logic to represent {accept, try later, reject},
 which helps both of the previous cases.
 
 This concludes the overview of our reference implementation. All the code that
-is not mentioned here, are straightforward applications of software engineering
+is not mentioned here, is a straightforward application of software engineering
 principles or algorithm writing, as applied to our protocol design (previous
 chapter) and software design (this chapter). For more details, see the API
 documentation [mpenc-api]_ and/or source code.

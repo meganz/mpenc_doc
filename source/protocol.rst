@@ -37,7 +37,7 @@ existing subsession with membership M'.
 After a successful change, the now-previous subsession (with membership M')
 enters a shutdown phase. This happens concurrently and independently of other
 parts of the session, such as messaging in the new subsession or subsequent
-membership change operations on top of G.
+membership change operations on top of M.
 
 .. [#atom] Our first group key agreement implementation did not enforce atomic
     operations. This caused major problems when users would leave the channel
@@ -45,8 +45,8 @@ membership change operations on top of G.
     since their GKA components would see different packets and reach different
     states. With atomic operations and our transport integration rules, an
     inconsistent state is only reached if the transport (e.g. chat server)
-    behaves incorrectly. That is, security warnings fire only when *there is
-    actually a problem*, one of our goals.
+    behaves incorrectly. One of our goals is, that security warnings fire
+    *only* when there is *actually* (or *likely* to be) a problem.
 
 Group key agreement
 ===================
@@ -66,15 +66,14 @@ participating in further membership changes (i.e. creating new subsessions).
 For the overall protocol, the number of communication rounds is O(n) in the
 number of members. The average size of GKA packets is also O(n). More modern
 protocols have O(1) number of rounds but retain O(n) packet size. However, our
-protocol is a simple "first approach" using elementary cryptography only, which
+protocol is a simple first approach using elementary cryptography only, which
 should be easier to understand and review.
 
-There is potential to add a weak form of deniability later, where authenticity
-of message contents are deniable, but authenticity of session participation is
-not. This is essentially the group analogue of how deniability is achieved in
-OTR, and has equivalent security. This is explored in more detail later. More
-modern techniques make the key agreement itself deniable (via a zero knowledge
-proof) but we're not expert enough in cryptography to do that here.
+This component may be upgraded or replaced independently of the other parts of
+our protocol system. For example, more modern techniques make the key agreement
+itself deniable via a zero-knowledge proof. We have skipped that for now to
+solve higher-priority concerns first, and because implementing such protocols
+correctly is more tricky. This is discussed further in :doc:`future-work`.
 
 .. _transport-integration:
 
@@ -94,11 +93,11 @@ generalises to *any* membership change protocol, and does not depend on the
 liveness of a particular member as it would if we had an explicit leader.
 
 There are further details and cases in both the algorithm and implementation.
-For example, we have additional logic to handle new members who don't know "the
-previous operation", and define a general method to authenticate the parent
+For example, we have additional logic to handle new members who don't know the
+previous operation, and define a general method to authenticate the parent
 references. We also arrange the code carefully to behave correctly for 1-packet
-operations, where the packet acts both as an "initial" and a "final" packet in
-our definitions above.
+operations, where the packet acts both as an initial and a final packet in our
+definitions above.
 
 To cover the other :ref:`distributed-systems` cases, we also have a system of
 rules on how to react to various channel and session events. These work roughly
@@ -113,8 +112,8 @@ along these principles:
   auto-behaviour, that might occur before those behaviours are applied.
 
 - We never initiate membership operations to exclude ourselves. When we want to
-  part the session, we initiate a "shutdown" process on the subsession, wait
-  for it to finish, then leave the channel. When others exclude us, we wait for
+  part the session, we initiate a shutdown process on the subsession, wait for
+  it to finish, then leave the channel. When others exclude us, we wait for
   them to kick us from the channel, if and after the operation succeeds. Either
   way, we switch to a "null/solo" subsession only *after* leaving the channel.
 
@@ -191,7 +190,7 @@ can be delayed to "batch" ack several messages at once and reduce volume.
 
 We develop some extra details to avoid perpetual reacking-of-acks, yet ensure
 that the final messages of a session, or of a busy period within a session, are
-actually fully-acked. We also include a formal session "shutdown" process.
+actually fully-acked. We also include a formal session shutdown process.
 
 For a more detailed exploration, including resend algorithms, timing concepts,
 different ack semantics, why we must have end-to-end authenticated reliability
@@ -205,7 +204,7 @@ Message encryption
 
 For now, message encryption is very simple. Each subsession has a constant set
 of keys (the output of the group key exchange) that are used to authenticate
-and encrypt all messages in it - one encryption key shared between all members,
+and encrypt all messages in it -- one encryption key shared across all members,
 and one signature key for each member, with the public part shared with others.
 
 Every message is encrypted using the shared encryption key, then signed by the
@@ -215,6 +214,11 @@ verifies the signature, then decrypts the ciphertext.
 These are constant throughout the session, so that if the shared encryption key
 is broken, the confidentiality of message content is lost. In the future, we
 will experiment with implementing this component as a forward secrecy ratchet.
-Note that we already have forward secrecy *between* subsessions. There is also
-the future option to make the message authentication confidential ("deniable").
+Note that we already have forward secrecy *between* subsessions.
+
+There is also the option to add a weak form of deniability, where authenticity
+of message contents are deniable, but authenticity of session participation is
+not. This is essentially the group analogue of how deniability is achieved in
+OTR [OTR-spec]_, and has equivalent security. (As mentioned before, making the
+group key agreement itself deniable is stronger, but more complex to achieve.)
 These directions are discussed further in :doc:`future-work`.

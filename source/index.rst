@@ -9,16 +9,16 @@ end-to-end security, as opposed to "secure" for irrelevant third parties.
 Our work provides everything needed to run a messaging session between real
 users on top of a real transport protocol. That is, we specify not just a key
 exchange, but when and how to run these relative to transport-layer events; how
-to achieve *liveness properties* such as ordering and consistency, that are
-time-sensitive and lie outside of the verify-decrypt logic that *cryptography
-only* protocols restrict themselves to; and offer suggestions for displaying
+to achieve *liveness properties* such as reliability and consistency, that are
+time-sensitive and lie outside of the send-receive logic that cryptography-only
+protocols often restrict themselves to; and offer suggestions for displaying
 accurate (i.e. secure) but not overwhelming information in user interfaces.
 
 We aim towards a general-purpose unified protocol. In other words, we'd prefer
 to avoid creating a completely new protocol merely to support automation, or
-asynchronity, or a different transport protocol. This adds complexity to the
-overall ecosystem of communications protocols. It is simply unnecessary if the
-original protocol is designed well, as we have tried to do.
+asynchronity, or a different transport protocol. This would add complexity to
+the overall ecosystem of communications protocols. It is simply unnecessary if
+the original protocol is designed well, as we have tried to do.
 
 That aim is not complete -- our full protocol system, as currently implemented,
 is suitable only for use with certain instant messaging protocols. However, we
@@ -29,7 +29,7 @@ in future protocol extensions, and we know exactly which components must be
 replaced in order to lift the existing constraints on our full system.
 
 Our main implementation is a JavaScript library; an initial version is awaiting
-integration into the MEGA web chat platform. We also have a Python "reference"
+integration into the MEGA web chat platform. We also have a Python reference
 prototype that is semi-functional but omits real cryptographic algorithms. Both
 our design and implementation need external review. To that end, this document
 contains high-level descriptions of each, and we will soon publish source code
