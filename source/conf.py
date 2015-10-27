@@ -250,11 +250,36 @@ latex_elements = {
 # Additional stuff for the LaTeX preamble.
 'preamble': """
 \\input{../../source/_include/unicode.tex}
+\\usepackage{enumitem}
+\\setlist[description]{style=nextline}
 """,
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
 }
+
+################ begin workaround ################
+
+# hacky workaround for latex "style=nextline" bug
+# https://tex.stackexchange.com/questions/198165/newline-after-each-element-in-description-environment
+
+latex_post_sed_expr = [
+    r"s,\\leavevmode\\begin{\([^}]*\)},\\leavevmode\\vspace{-\\baselineskip}\\begin{\1},g"
+]
+
+import sphinx.builders.latex
+import subprocess
+
+_LaTeXBuilder = sphinx.builders.latex.LaTeXBuilder
+class LaTeXBuilder(_LaTeXBuilder):
+    def write(self, *args, **kwargs):
+        _LaTeXBuilder.write(self, *args, **kwargs)
+        for _, targetname, _, _, _ in self.document_data:
+            dst = os.path.join(self.outdir, targetname)
+            subprocess.check_call(["sed"] + ["-e"+e for e in latex_post_sed_expr] + ["-i", dst])
+sphinx.builders.latex.LaTeXBuilder = LaTeXBuilder
+
+################# end workaround #################
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
