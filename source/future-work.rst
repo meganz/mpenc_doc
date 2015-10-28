@@ -87,13 +87,13 @@ Messaging ratchet for intra-subsession forward secrecy
   We already have forward secrecy for old subsessions, but this is important
   for long-running subsessions and later when we do asynchronous messaging.
 
-  One simple scheme is to deterministically split the key into *n* keys, one
-  for each sender. Then, each key can be used to seed a hash-chain ratchet for
-  its associated sender. Once all readers have decrypted a packet and deleted
-  the key, the forward secrecy of messages encrypted with that key and previous
-  ones is ensured. However, since this scheme does not distribute entropy
-  between members, there is no chance to recover from a memory leak and try to
-  regain secrecy for future messages.
+  One simple scheme is to deterministically split the key into :math:`n` keys,
+  one for each sender. Then, each key can be used to seed a hash-chain ratchet
+  for its associated sender. Once all readers have decrypted a packet and
+  deleted the key, the forward secrecy of messages encrypted with that key and
+  previous ones is ensured. However, since this scheme does not distribute
+  entropy between members, there is no chance to recover from a memory leak and
+  try to regain secrecy for future messages.
 
 Better membership change protocol
   Use a constant-round group key exchange such as that from [np1sec]_, or even
@@ -110,8 +110,8 @@ More functionality
 ------------------
 
 Large messages and file transfer
-  Our current padding scheme limits messages to roughly 2\ :sup:`16` bytes, to
-  keep it under our XMPP server maximum stanza size. This may be extended to
+  Our current padding scheme limits messages to roughly :math:`2^{16}` bytes,
+  to keep it under our XMPP server maximum stanza size. This may be extended to
   arbitrary sizes: pad to the next-power-of-2-multiple of the maximum size, and
   split this into MTU-sized packets. (This is just a functionality improvement;
   these padding schemes have not been researched from an adversarial model.)

@@ -262,15 +262,16 @@ express complex behaviours more concisely and generally.
     type Publish[T, S]      = T => List[S]
 
   ``T`` is the type of the communicated item, and ``S`` is an optional type
-  (default ``Unit``) that callbacks may want to pass back to the producer, to
-  signal some sort of "status". The return value of ``Cancel`` is whether the
-  subscription was not already cancelled.
+  (default ``()``, called ``void`` in some languages) that callbacks may want
+  to pass back to the producer, to signal some sort of "status". The return
+  value of ``Cancel`` is whether the subscription was not already cancelled.
 
   Even if absent from the language, having an idea on what types *ought* to be
   helps us to write combinators, e.g. to make a complex subscribe function
-  ("run A after event X but run B instead if event Y happens first and run A2
-  if event X happens after that") or a complex cancel function ("cancel all in
-  X and if all of them were already cancelled then also cancel all in Y").
+  ("run ``A`` after event ``X`` but run ``B`` instead if event ``Y`` happens
+  first and run ``A2`` if event ``X`` happens after that") or a complex cancel
+  function ("cancel all in set ``X`` and if all of them were already cancelled
+  then also cancel all in set ``Y``").
 
 ``EventContext``
   A utility that supports efficient prefix-matched subscriptions, so consumers

@@ -132,8 +132,8 @@ internal state consistency of a naive implementation:
 - A user enters the channel during an operation;
 - A user leaves the channel during an operation;
 - A member starts an operation and sends the first packet to the other channel
-  members M, but when others receive it the membership has changed to M', or
-  there was another operation that jumped in before it;
+  members :math:`M`, but when others receive it the membership has changed to
+  :math:`M'`, or there was another operation that jumped in before it;
 - Different operation packets (initial or final) are decodeable by different
   members, some of which are not part of the cryptographic session. If we're
   not careful, they will think different things about the state of the session,

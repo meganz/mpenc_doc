@@ -104,8 +104,8 @@ authenticator message from their own contributions:
 .. math::
    m_i = (\mathsf{CTX}||\mathsf{pid}_i||E_i||k_i||\mathsf{sid})
 
-Here, :math:`\mathsf{CTX}` is a fixed string to prevent the signature being
-used in another application; we currently use the byte sequence "``acksig``".
+Here, :math:`\mathsf{CTX}` is a fixed byte sequence to prevent the signature
+being used in another application; for this protocol version we use ``acksig``.
 :math:`\mathsf{sid}` is the *session ID*, calculated from all participant IDs
 and nonces using a hash function :math:`H`:
 

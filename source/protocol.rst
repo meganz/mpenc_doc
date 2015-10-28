@@ -10,8 +10,9 @@ Session overview
 ================
 
 A session is a local process from the point of view of *one member*. We don't
-attempt to represent a single "group" view of a session; in general such views
-are not useful for *accurately* modelling security *or* distributed systems.
+attempt to reason about nor represent an overall "group" view of a session; in
+general such views are not useful for *accurately* modelling, or implementing,
+security or distributed systems.
 
 A session, time-wise, contains a linear sequence of *session membership change*
 operations, that (if and when completed successfully) each create subsessions
@@ -22,22 +23,23 @@ packets where members try to start or finish an operation. The sequence is also
 context-preserving, i.e. it is guaranteed that no other operations complete
 *between* when a member proposes one, and it being accepted by the group.
 
-Each accepted operation G is initialised from (a) previous state (the result of
-the previous operation, or a null state if the first) that encodes the current
-membership M' and any cryptographic values that G needs such as ephemeral keys;
-and (b) the first packet of the operation, sent by a member of M', that defines
-the intended next membership M. While G is ongoing, members may send messages
-in the current subsession as normal, i.e. to M'. [#atom]_
+Each accepted operation :math:`G` is initialised from (a) previous state (the
+result of the previous operation, or a null state if the first) that encodes
+the current membership :math:`M'` and any cryptographic values that :math:`G`
+needs such as ephemeral keys; and (b) the first packet of the operation, sent
+by a member of :math:`M'`, that defines the intended next membership :math:`M`.
+While :math:`G` is ongoing, members may send messages in the current subsession
+as normal, i.e. to :math:`M'`. [#atom]_
 
-G may finish with success, upon which we atomically change to a new subsession
-for M, and the result state is stored for the next operation; or with failure,
-upon which we destroy all temporary state related to G, and continue using the
-existing subsession with membership M'.
+:math:`G` may finish with success, upon which we atomically change to a new
+subsession for :math:`M`, and store the result state for the next operation; or
+with failure, upon which we destroy all temporary state related to :math:`G`,
+and continue using the existing subsession with membership :math:`M'`.
 
-After a successful change, the now-previous subsession (with membership M')
-enters a shutdown phase. This happens concurrently and independently of other
-parts of the session, such as messaging in the new subsession or subsequent
-membership change operations on top of M.
+After a successful change, the now-previous subsession (with membership
+:math:`M'`) enters a shutdown phase. This happens concurrently and
+independently of other parts of the session, such as messaging in the new
+subsession or subsequent membership change operations on top of :math:`M`.
 
 .. [#atom] Our first group key agreement implementation did not enforce atomic
     operations. This caused major problems when users would leave the channel
@@ -63,11 +65,11 @@ The keys are used to read/write messages in the subsession created by the
 operation. Identity secrets are *not* needed for this, but they are needed for
 participating in further membership changes (i.e. creating new subsessions).
 
-For the overall protocol, the number of communication rounds is O(n) in the
-number of members. The average size of GKA packets is also O(n). More modern
-protocols have O(1) number of rounds but retain O(n) packet size. However, our
-protocol is a simple first approach using elementary cryptography only, which
-should be easier to understand and review.
+For the overall protocol, the number of communication rounds is :math:`O(n)` in
+the number of members. The average size of GKA packets is also :math:`O(n)`.
+More modern protocols have :math:`O(1)` rounds but retain :math:`O(n)` packet
+size. However, our protocol is a simple first approach using elementary
+cryptography only, which should be easier to understand and review.
 
 This component may be upgraded or replaced independently of the other parts of
 our protocol system. For example, more modern techniques make the key agreement
@@ -119,7 +121,7 @@ along these principles:
 
 For full details of our agreement mechanism, our transport integration rules,
 and the rationale for them, along with more precise descriptions of our model
-for a general G and of a group transport channel, see [msa-5h0]_.
+for a general :math:`G` and of a group transport channel, see [msa-5h0]_.
 
 Message ordering
 ================

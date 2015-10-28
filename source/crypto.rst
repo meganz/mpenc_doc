@@ -94,9 +94,9 @@ A greeting packet contains the following records, in order:
 * ``DEST`` (optional) -- User ID of the packet destination; if omitted, it
   means this is a broadcast (i.e. downflow) packet.
 * ``MEMBER`` (multiple) -- Participating member user IDs. This record appears
-  *n* times, once for each member participating in this operation, i.e. the set
-  of members in the subsession that would be created on its success. This also
-  defines the orders of participants in the upflow sequence.
+  :math:`n` times, once for each member participating in this operation, i.e.
+  the set of members in the subsession that would be created on its success.
+  This also defines the orders of participants in the upflow sequence.
 * [a] ``INT_KEY`` (multiple) -- Intermediate DH values for the GKA.
 * [a] ``NONCE`` (multiple) -- Nonces of each member for the ASKE.
 * [a] ``PUB_KEY`` (multiple) -- Ephemeral session public signing keys of each
@@ -114,16 +114,17 @@ A greeting packet contains the following records, in order:
   the packet author.
 
 a. Only for upflow messages and the first downflow message. During the upflow,
-   this gets filled to a maximum of *n* occurences.
+   this gets filled to a maximum of :math:`n` occurences.
 b. Only for the initial packet of any operation. These fields are ignored by
    the greeting protocol; instead they are used by the concurrency resolver.
    See :ref:`transport-integration` and [msa-5h0]_ for details.
 c. Only for downflow messages, to confirm the ASKE keys.
 
 ``MESSAGE_SIGNATURE`` is made by the ephemeral signing key and signs the byte
-sequence ``$magic_number || all_subsequent_records``. ``$magic_number`` is a
-fixed string to prevent the signature being injected elsewhere; for greeting
-packets in this version, it is the byte sequence ``greetmsgsig``.
+sequence :math:`\mathsf{CTX} || \mathsf{S}`. :math:`\mathsf{CTX}` is a fixed
+byte sequence to prevent the signature being injected elsewhere; for greeting
+packets in this version, it is ``greetmsgsig``. :math:`\mathsf{S}` is the byte
+sequence of all subsequent records, starting with ``PROTOCOL_VERSION``.
 
 Even though this ephemeral key is not authenticated against any identity keys
 at the start of the operation, it is so by the end via ``SESSION_SIGNATURE``.
@@ -167,12 +168,17 @@ A data packet contains the following records, in order:
     by the human author.
 
 ``MESSAGE_SIGNATURE`` is made by the ephemeral signing key and signs the byte
-sequence ``$magic_number || H(sid || group_key) || all_subsequent_records``.
-``$magic_number`` is a fixed string to prevent the signature being injected
-elsewhere; for data packets in this protocol version, it is the byte sequence
-``datamsgsig``. Since a single ephemeral signing key may be used across several
-subsessions, the hash value ensures that each ciphertext is verifiably bound to
-a specific subsession. [#psig]_
+sequence :math:`\mathsf{CTX} || H(\mathsf{sid} || \mathsf{gk}) || \mathsf{S}`.
+:math:`\mathsf{CTX}` is a fixed byte sequence to prevent the signature being
+injected elsewhere; for data packets in this version, it is ``datamsgsig``.
+:math:`\mathsf{S}` is the byte sequence of all subsequent records, starting
+with ``PROTOCOL_VERSION``.
+
+Since a single ephemeral signing key may be used across several subsessions,
+the :math:`H(\dots)` value ensures that each ciphertext is verifiably bound to
+a specific subsession. [#psig]_ :math:`\mathsf{sid}` is the session ID (of the
+subsession) as determined from the ASKE, and :math:`\mathsf{gk}` is the
+encryption key derived from the GKA.
 
 **Padding**. We use an opportunistic padding scheme that obfuscates the lower
 bits of the length of the message. This has not been analysed under an
@@ -186,14 +192,13 @@ scheme is as follows:
   big-endian encoding) indicating its size.
 - Further zero bytes are appended up to ``size_bl`` bytes.
 - If the payload is already larger than this, then we instead pad up to the
-  next power-of-two multiple of ``size_bl`` (e.g. ``2 * size_bl``, ``4 *
-  size_bl``, ``8 * size_bl``, etc) that can contain the payload.
+  next power-of-two multiple of ``size_bl`` (e.g. ``2*size_bl``, ``4*size_bl``,
+  ``8*size_bl``, etc) that can contain the payload.
 
 **Trial decryption**. In general, at some points in time, it may be possible to
 receive a message from several different sessions. The ``SIDKEY_HINT`` record
 helps to efficiently determine the correct decryption key. We calculate it as
-``H(sid || group_key)[0]``. ``sid`` is the session ID (of the subsession) as
-determined from the ASKE, and ``group_key`` is its encryption key.
+:math:`H(\mathsf{sid} || \mathsf{gk})[0]`.
 
 Only the first byte of the hash value is used, so it is theoretically possible
 that values may collide and subsequent trials may be required to determine the
@@ -207,9 +212,9 @@ to select between the multiple decryption keys or multiple authentication keys
 (respectively) that are available to verify-decrypt packets.
 
 .. [#psig] When/if we come to publish ephemeral signature keys, we will also
-    have to publish all ``H(sid || group_key)`` values that were used by the
-    key, to ensure that a forger can generate valid packets without knowing the
-    group encryption keys.
+    have to publish all :math:`H(\mathsf{sid} || \mathsf{gk})` values
+    that were used by the key, to ensure that a forger can generate valid
+    packets without knowing the group encryption keys.
 
 Encoding and primitives
 =======================

@@ -1,0 +1,16 @@
+{% extends "!layout.html" %}
+{% block extrahead %}
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+            "HTML-CSS": {
+                // switch this off, it tends to make fonts too large
+                matchFontHeight: false,
+                // see https://docs.mathjax.org/en/v2.5-latest/options/HTML-CSS.html for valid values
+                // most other ones don't look so good with the surrounding sans-serif Sphinx text
+                availableFonts: ["Neo-Euler"],
+                preferredFont: "Neo-Euler",
+                webFont: "Neo-Euler",
+            },
+        });
+    </script>
+{% endblock %}
