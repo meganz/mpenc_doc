@@ -44,6 +44,14 @@ employ in lower-level utilities. In chapter 5, we detail our crytographic
 algorithms and our packet format. Finally in chapter 6, we outline future work,
 both for the immediate short term as well as long-term research objectives.
 
+.. only:: latex
+
+    .. raw:: latex
+
+        \newpage
+
+    .. include:: copyright.rst
+
 .. toctree::
    :maxdepth: 2
    :numbered:

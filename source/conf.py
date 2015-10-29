@@ -50,8 +50,8 @@ master_doc = 'index'
 # General information about the project.
 project = u'Multi-Party Encrypted Messaging Protocol design document'
 authorgroup = u'Mega Limited, Auckland, New Zealand'
+authors = [u'Ximin Luo <xl@mega.co.nz>', u'Guy Kloss <gk@mega.co.nz>']
 copyright = u'2015, %s' % authorgroup
-author = u'Ximin Luo <xl@mega.co.nz>, Guy Kloss <gk@mega.co.nz>'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -256,15 +256,20 @@ latex_elements = {
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
+
 }
 
 ################ begin workaround ################
 
-# hacky workaround for latex "style=nextline" bug
-# https://tex.stackexchange.com/questions/198165/newline-after-each-element-in-description-environment
+# hacky latex workarounds
 
 latex_post_sed_expr = [
-    r"s,\\leavevmode\\begin{\([^}]*\)},\\leavevmode\\vspace{-\\baselineskip}\\begin{\1},g"
+    # "style=nextline" bug for definition lists
+    # https://tex.stackexchange.com/questions/198165/newline-after-each-element-in-description-environment
+    r"s,\\leavevmode\\begin{\([^}]*\)},\\leavevmode\\vspace{-\\baselineskip}\\begin{\1},g",
+    # certain uses of DUlineblock have too much vertical padding
+    r"/^\\end{DUlineblock}$/{N;s/\n$/\\vspace{-\\baselineskip}\n/;b}",
+    r"$!N;s/^\n\(\\begin{DUlineblock}{0em}\)/\n\\vspace{-\\baselineskip}\1/;P;D",
 ]
 
 import sphinx.builders.latex
@@ -286,7 +291,7 @@ sphinx.builders.latex.LaTeXBuilder = LaTeXBuilder
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   (master_doc, 'mpENC.tex', project,
-   u'Mega Limited, Auckland, New Zealand \\and Ximin Luo \\textless{}xl@mega.co.nz\\textgreater{} \\and Guy Kloss \\textless{}gk@mega.co.nz\\textgreater{}', 'manual'),
+  u" \\and ".join([authorgroup] + authors), 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
