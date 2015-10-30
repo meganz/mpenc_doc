@@ -238,7 +238,7 @@ its own thread. There are reentrancy issues around this [#reen]_, but in our
 simple usage it makes reasoning about execution order more predictable, and
 means that we have no dependency on any specific external execution framework.
 
-For long-running user operations, we use ``Future``s, which is the standard
+For long-running user operations, we use ``Future``\ s, which is the standard
 utility for this sort of asynchronous "function call"-like operation, that is
 expected to return some sort of response. In our system, a common pattern is
 for a ``Future``'s lifetime to include several IO rounds between components.
@@ -323,7 +323,8 @@ user interface:
 
   trait ReceivingSender[SendInput, RecvOutput] {
     def send   : SendInput => Boolean
-    def onRecv : Subscribe[RecvOutput, Boolean] // i.e. (RecvOutput => Boolean) => (() => Boolean)
+    def onRecv : Subscribe[RecvOutput, Boolean]
+      // i.e. (RecvOutput => Boolean) => (() => Boolean)
   }
 
 For example, when the UI wants to send some things to our session, it passes
@@ -337,7 +338,8 @@ transport client:
 
   trait SendingReceiver[RecvInput, SendOutput] {
     def recv   : RecvInput => Boolean
-    def onSend : Subscribe[SendOutput, Boolean] // i.e. (SendOutput => Boolean) => (() => Boolean)
+    def onSend : Subscribe[SendOutput, Boolean]
+      // i.e. (SendOutput => Boolean) => (() => Boolean)
   }
 
 For example, when we want to tell a GKA session membership operation that we
