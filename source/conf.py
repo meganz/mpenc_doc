@@ -257,6 +257,9 @@ latex_elements = {
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
 
+# Get rid of so many blank pages.
+ 'classoptions': ',openany,oneside',
+ 'babel': '\\usepackage[english]{babel}',
 }
 
 ################ begin workaround ################
