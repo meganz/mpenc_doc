@@ -60,7 +60,7 @@ copyright = u'2015, %s' % authorgroup
 # The short X.Y version.
 version = '0.1'
 # The full version, including alpha/beta/rc tags.
-tag_prefix = 'design/'
+tag_prefix = 'v'
 release = subprocess.check_output(
     ('git describe --match %s%s --tags --dirty' % (tag_prefix, version)).split()
     ).strip()[len(tag_prefix):]
