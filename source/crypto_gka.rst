@@ -31,9 +31,10 @@ AKA bear a special role.  All participants of the CLIQUES key agreement can be
 considered equal in terms of the protocol functionality.
 
 CLIQUES does **not** protect against active attackers.  However, in our use of
-it, all messages are co-located with the ASKE messages and *each* message is
-authenticated.  Therefore an active attack is countered by the final ASKE
-verification step (see :ref:`ASKE_verification`).
+it, all messages are co-located with our Authenticated Signature Key Exchange
+(ASKE) messages, which authenticates each full message in the whole protocol.
+Therefore, an active attack is countered by the final :ref:`ASKE verification
+<ASKE_verification>` step.
 
 
 Initial Key Agreement (IKA)

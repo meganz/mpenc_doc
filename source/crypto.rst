@@ -205,11 +205,14 @@ that values may collide and subsequent trials may be required to determine the
 correct keys to use. However, this should give a performance improvement in the
 majority of cases without sacrificing security.
 
-When we implement forward-secrecy ratchets, or when we move to anonymous
-transports that don't provide hints on the authorship of packets (as XMPP does
-with the ``from`` attribute of stanzas), this technique may be adapted further
-to select between the multiple decryption keys or multiple authentication keys
-(respectively) that are available to verify-decrypt packets.
+When we implement forward-secrecy ratchets, or when we move to transports that
+don't provide explicit hints on the authorship of packets, this technique may
+be adapted further to select between the multiple decryption or authentication
+keys (respectively) that are available to verify-decrypt packets. Composing
+this with anonymity systems will need extra care however - if the hint values
+are the same for related messages, then attackers can identify messages sharing
+this relationship with greater probability. (This is the case with our scheme
+above, where we use the same value for all messages in a subsession.)
 
 .. [#psig] When/if we come to publish ephemeral signature keys, we will also
     have to publish all :math:`H(\mathsf{sid} || \mathsf{gk})` values

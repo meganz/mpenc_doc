@@ -312,9 +312,10 @@ High-level
 ----------
 
 We define two interfaces (*trait* or *typeclass* in some languages) as a common
-pattern for our actor-like components to use. Each interface is essentially a
-(function, subscribe-function) pair. The former is used for input into the
-component, the latter for accepting output from it.
+pattern for our `Actor <https://en.wikipedia.org/wiki/Actor_model>`_-like
+components to follow. Each interface is a (function, subscribe-function) pair.
+The former is to provide input into the component, the latter to accept output
+from it.
 
 One interface is for interacting with a more "high level" component, e.g. a
 user interface:

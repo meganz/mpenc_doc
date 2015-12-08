@@ -106,13 +106,13 @@ be used to represent the ordering of events. We do this for messages, and this
 component of our system may be directly reused for asynchronous messaging.
 
 However, group key agreements (GKAs), which is our membership change mechanism,
-historically have not been developed with this consideration in mind. An ideal
-solution would define how to merge the results of two concurrent operations, or
-even how to merge the operations themselves. But we could not find literature
-that even mentions this problem, and we are unsure how to begin to approach it.
-Based on our moderate experience in this area, it seems feasible at least that
-any solution would be highly specific to the GKA used, limiting our future
-options for replacing cryptographic components.
+historically have not been developed with this consideration in mind. A direct
+solution would define the result of merging two concurrent operations, and give
+an algorithm for both sides of the fork to execute, to reach this result state.
+But we could not find literature that even mentions this problem, and we are
+unsure how to begin to approach it. Based on our moderate experience, it seems
+feasible at least that any solution would be highly specific to the GKA used,
+limiting our future options for replacing cryptographic components.
 
 For now, we give up causal ordering for membership operations, and instead
 enforce a linear ordering for them. To make this easier, we restrict ourselves
