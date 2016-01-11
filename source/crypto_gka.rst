@@ -3,8 +3,10 @@ Group Key Agreement (GKA)
 =========================
 
 The group key agreement is conducted according to CLIQUES [00CLIQ]_.  We modify
-the protocol to use ECDH based on x25519 instead of classic DH.  It negotiates
-a shared group key for :math:`n` members in a total of :math:`O(n)` messages
+the protocol to use ECDH based on x25519 instead of classic DH, since it is
+superior in all attributes -- faster to process, smaller keys to transport and
+store, and existing libraries are simpler to interface with.  It negotiates a
+shared group key for :math:`n` members in a total of :math:`O(n)` messages
 sent, and re-negotiates (single-member) include, exclude or key refresh in
 :math:`O(1)` messages, assuming broadcasts are available.
 

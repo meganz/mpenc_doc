@@ -38,11 +38,11 @@ Server-order consistency checks
   all previous operations. Further, the parent reference contained within the
   initial packet must also be authenticated by the initiator.
 
-  Together, these remove any chance the server might have at *arbitrarily*
-  re-ordering operations. However, from a set of concurrent operations with the
-  same authenticated parent, it still has the power to choose which one is
-  accepted, by broadcasting that one first. Given other constraints, we think
-  this trade-off is acceptable. [#rtry]_
+  Together, these prevent the server from re-ordering operations *completely*
+  arbitrarily. However, given a set of concurrent operations with the same
+  authenticated parent, it is still able to choose which one is accepted, by
+  broadcasting that one first. Given other constraints, we think this security
+  tradeoff is acceptable. [#rtry]_
 
 Flow control
   We need recovery (automatic resends) for dropped messages, and heartbeats to
