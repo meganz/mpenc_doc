@@ -32,8 +32,8 @@ Our main implementation is a JavaScript library; an initial version is awaiting
 integration into the MEGA web chat platform. We also have a Python reference
 prototype that is semi-functional but omits real cryptographic algorithms. Both
 our design and implementation need external review. To that end, this document
-contains high-level descriptions of each, and we will soon publish source code
-and API documentation under the free open source software 2-clause BSD license.
+contains high-level descriptions of each, and we have also published source
+code and API documentation under the free open source software AGPL-3 license.
 
 In chapters 1 and 2, we explore topics in secure group messaging in general,
 then apply these to our work and justify our design choices. In chapter 3, we
